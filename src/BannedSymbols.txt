@@ -1,0 +1,2 @@
+P:System.DateTime.Now;Use Terraverse.Matrix.Zion.Clock.IDate instead
+P:System.DateTimeOffset.Now;Use Terraverse.Matrix.Zion.Clock.IDate instead

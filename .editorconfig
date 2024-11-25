@@ -1,0 +1,86 @@
+root = true
+
+[*]
+indent_style = space
+
+[*.{yml,xml,json,txt}]
+indent_size = 2
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+
+[*.{cs,csx,proto,ps1,sh}]
+indent_size = 4
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+
+[*.md]
+indent_size = 4
+trim_trailing_whitespace = false
+charset = utf-8
+end_of_line = lf
+
+[*.{csproj,props}]
+indent_size = 2
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.cs]
+# https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/configuration-options
+# https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/code-style-rule-options
+# https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/
+
+csharp_using_directive_placement = inside_namespace:warning
+
+# Imports
+dotnet_separate_import_directive_groups = false
+dotnet_sort_system_directives_first = false
+
+# Documentation
+dotnet_analyzer_diagnostic.category-Documentation.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+
+# Code
+dotnet_diagnostic.CA1010.severity = none       # CollectionsShouldImplementGenericInterface
+dotnet_diagnostic.CA1031.severity = none       # DoNotCatchGeneralExceptionTypes
+dotnet_diagnostic.CA1040.severity = none       # AvoidEmptyInterfaces
+dotnet_diagnostic.CA1056.severity = none       # UriPropertiesShouldNotBeStrings
+dotnet_diagnostic.CA1062.severity = none       # ValidateArgumentsOfPublicMethods
+dotnet_diagnostic.CA1303.severity = none       # DoNotPassLiteralsAsLocalizedParameters
+dotnet_diagnostic.CA1305.severity = none       # SpecifyIFormatProvider; used mostly in cases when format provider means no difference
+dotnet_diagnostic.CA1307.severity = none       # SpecifyStringComparison; used mostly in cases when string comparison means no difference
+dotnet_diagnostic.CA1714.severity = none       # FlagsEnumsShouldHavePluralNames
+dotnet_diagnostic.CA1819.severity = none       # PropertiesShouldNotReturnArrays
+dotnet_diagnostic.CA1822.severity = suggestion # Mark members as static
+dotnet_diagnostic.CA2225.severity = none       # OperatorOverloadsHaveNamedAlternates
+
+# Style - Documentation
+dotnet_diagnostic.CS1573.severity = none       # Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1591.severity = none       # no matching param tag in the XML comment
+
+# Style
+dotnet_diagnostic.SA1101.severity = none       # PrefixLocalCallsWithThis
+dotnet_diagnostic.SA1124.severity = none       # DoNotUseRegions
+dotnet_diagnostic.SA1203.severity = none       # ConstantsMustAppearBeforeFields
+dotnet_diagnostic.SA1214.severity = none       # ReadonlyElementsMustAppearBeforeNonReadonlyElements
+dotnet_diagnostic.SA1316.severity = none       # TupleElementNamesShouldUseCorrectCasing
+
+# Style - Ordering Rules
+dotnet_diagnostic.SA1200.severity = none       # UsingDirectivesMustBePlacedWithinNamespace
+dotnet_diagnostic.SA1201.severity = none       # ElementsMustAppearInTheCorrectOrder
+dotnet_diagnostic.SA1202.severity = none       # ElementsMustBeOrderedByAccess
+dotnet_diagnostic.SA1203.severity = warning    # ConstantsMustAppearBeforeFields
+dotnet_diagnostic.SA1204.severity = none       # StaticElementsMustAppearBeforeInstanceElements
+dotnet_diagnostic.SA1205.severity = none       # PartialElementsMustDeclareAccess
+dotnet_diagnostic.SA1206.severity = warning    # DeclarationKeywordsMustFollowOrder
+dotnet_diagnostic.SA1207.severity = none       # ProtectedMustComeBeforeInternal
+dotnet_diagnostic.SA1208.severity = none       # SystemUsingDirectivesMustBePlacedBeforeOtherUsingDirectives
+dotnet_diagnostic.SA1209.severity = warning    # UsingAliasDirectivesMustBePlacedAfterOtherUsingDirectives
+dotnet_diagnostic.SA1210.severity = warning    # UsingDirectivesMustBeOrderedAlphabeticallyByNamespace
+dotnet_diagnostic.SA1211.severity = warning    # UsingAliasDirectivesMustBeOrderedAlphabeticallyByAliasName
+dotnet_diagnostic.SA1212.severity = none       # PropertyAccessorsMustFollowOrder
+dotnet_diagnostic.SA1213.severity = none       # EventAccessorsMustFollowOrder
+dotnet_diagnostic.SA1214.severity = warning    # ReadonlyElementsMustAppearBeforeNonReadonlyElements

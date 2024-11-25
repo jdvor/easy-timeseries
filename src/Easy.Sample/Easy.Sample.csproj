@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Easy.TimeSeries.SrcGen\Easy.TimeSeries.SrcGen.csproj" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+  </ItemGroup>
+  
+</Project>

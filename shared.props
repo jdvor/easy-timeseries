@@ -1,0 +1,23 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <Copyright>Copyright (c) 2023 Terraverse, s.r.o.</Copyright>
+    <Authors>Miroslav Osko, Martin Skacel</Authors>
+    <PackageProjectUrl>https://github.com/terra-verse/terraverse-solution-template</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/terra-verse/terraverse-solution-template</RepositoryUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+</Project>

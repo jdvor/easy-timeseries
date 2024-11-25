@@ -1,0 +1,63 @@
+﻿artifacts/
+publish/
+docs/
+nupkg/
+*.md
+*.sh
+
+# Csharp
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# docker
+*dockerignore
+*Dockerfile*
+docker-compose*
+compose.yml
+
+# git
+.git
+.gitignore
+.gitattributes
+.gitmodules
+*.orig
+
+# GitHub
+.github/
+
+# IDEs
+.idea/
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# detritus
+LICENSE
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+$RECYCLE.BIN/
+[Ll]og/
+[Ll]ogs/
+*.log

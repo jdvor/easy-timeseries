@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>...</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Parquet.Net" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+  </ItemGroup>
+
+</Project>

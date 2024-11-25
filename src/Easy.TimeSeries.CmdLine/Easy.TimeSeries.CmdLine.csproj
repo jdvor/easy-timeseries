@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPublishable>true</IsPublishable>
+    <IsTrimmable>true</IsTrimmable>
+    <AssemblyName>tsctl</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
+    <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+  </ItemGroup>
+
+</Project>
