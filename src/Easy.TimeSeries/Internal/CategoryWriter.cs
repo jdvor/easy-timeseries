@@ -6,13 +6,14 @@ internal sealed class CategoryWriter(BitWriter bitWriter)
     {
         if (id <= 15)
         {
-            bitWriter.Write(0, 1);
-            bitWriter.Write((ulong)id, 4);
-            return;
+            bitWriter.Write((ulong)id << 1, 5); // bit 0 = 0 (small), bits 1-4 = id
+        }
+        else
+        {
+            bitWriter.Write(1UL | ((ulong)id << 1), 16); // bit 0 = 1 (large), bits 1-15 = id
         }
 
-        bitWriter.Write(1, 1);
-        bitWriter.Write((ulong)id, 15);
+        bitWriter.CommitRecord();
     }
 
     public static int GetSizeHint(int valueCount)

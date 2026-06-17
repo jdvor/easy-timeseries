@@ -9,6 +9,6 @@ internal ref struct ScaledNumber32Reader(ReadOnlySpan<byte> buffer, int scale)
     public float Read()
     {
         var v = i32Reader.Read();
-        return (float)v / scale;
+        return (float)((double)v / scale);
     }
 }

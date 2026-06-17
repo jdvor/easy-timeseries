@@ -30,6 +30,7 @@ internal sealed class DateTimeWriter
             prevTimeStamp = timestamp;
             prevTimeStampDelta = 1;
             hasStoredFirstValue = true;
+            bitWriter.CommitRecord();
             return;
         }
 
@@ -39,6 +40,7 @@ internal sealed class DateTimeWriter
         {
             prevTimeStamp = timestamp;
             bitWriter.Write(0, 1); // signal no delta
+            bitWriter.CommitRecord();
             return;
         }
 
@@ -49,6 +51,7 @@ internal sealed class DateTimeWriter
 
         prevTimeStamp = timestamp;
         prevTimeStampDelta = delta;
+        bitWriter.CommitRecord();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

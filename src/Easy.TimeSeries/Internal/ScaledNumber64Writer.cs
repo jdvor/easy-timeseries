@@ -6,7 +6,7 @@ internal sealed class ScaledNumber64Writer(BitWriter bitWriter, int scale)
 
     public void Write(double value)
     {
-        var v = (long)Math.Floor(value * scale);
+        var v = (long)Math.Round(value * scale);
         i64Writer.Write(v);
     }
 

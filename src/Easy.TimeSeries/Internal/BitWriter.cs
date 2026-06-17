@@ -21,11 +21,12 @@ internal sealed class BitWriter
         this.getColumnHeaderMemory = getColumnHeaderMemory;
     }
 
+    public void CommitRecord() => records++;
+
     public void Write(ulong value, int bits)
     {
         Debug.Assert(bits is >= 1 and <= WordBitSize, "bits not in range <1, 64>");
 
-        records++;
         word += value << bufferedBits;
         bufferedBits += bits;
         if (bufferedBits >= WordBitSize)

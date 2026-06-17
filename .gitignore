@@ -1,17 +1,24 @@
-### Terraverse specific ###
-
 [Pp]ublish/
 [Aa]rtifacts/
-nupkg/
-deps/
 local.settings.json
 *.dev.json
+*.local.json
 **/.obsidian/workspace*
-try.sh
+
+# some mdbook pre-processors download js and css
+docs/assets/vendor/
 
 
 ### Git ###
 *.orig
+
+
+# Claude AI
+CLAUDE.local.md
+.claude/*
+!.claude/CLAUDE.md
+!.claude/skills/
+!.claude/rules/
 
 
 ### Common detritus ###
@@ -47,10 +54,6 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
-
-
-### Javascript ###
-node-modules/
 
 
 ### IntelliJ ###

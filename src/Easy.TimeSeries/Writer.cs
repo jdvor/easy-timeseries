@@ -3,6 +3,10 @@ namespace Easy.TimeSeries;
 using Easy.TimeSeries.Storage;
 using System.Collections.Immutable;
 
+/// <summary>
+/// A builder for time series data, which accumulates data in memory by receiving series of values representing columns
+/// and at the end writes it all to a storage.
+/// </summary>
 public sealed class Writer : IDisposable
 {
     private readonly List<(ColumnInfo, PooledArrayBufferWriter)> columns = new(capacity: 4);
@@ -317,7 +321,7 @@ public sealed class Writer : IDisposable
 
     private (PooledArrayBufferWriter bufferWriter, BitWriter bitWriter) CreateWriters(int sizeHint)
     {
-        var bufferProvider = new PooledArrayBufferWriter(sizeHint, BufferGrowFactor, MaxAllowedBufferSize);
+        var bufferProvider = new PooledArrayBufferWriter(sizeHint + ColumnHeader.Size, BufferGrowFactor, MaxAllowedBufferSize);
         bufferProvider.Advance(ColumnHeader.Size);
         var bitWriter = new BitWriter(bufferProvider, bufferProvider.GetColumnHeaderMemory);
         return (bufferProvider, bitWriter);

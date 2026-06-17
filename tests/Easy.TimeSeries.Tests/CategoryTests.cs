@@ -1,7 +1,5 @@
 namespace Easy.TimeSeries.Tests;
 
-using Xunit.Abstractions;
-
 public class CategoryTests
 {
     private readonly ITestOutputHelper output;
@@ -65,7 +63,7 @@ public class CategoryTests
     }
 
     private static readonly string[] Keys =
-    {
-        "Solar", "Hydro", "Oil", "Coal", "Nuclear", "Biogas", "Tidal", "Thermal gradient", "Wind"
-    };
+    [
+        "Solar", "Hydro", "Oil", "Coal", "Nuclear", "Biogas", "Tidal", "Thermal gradient", "Wind",
+    ];
 }

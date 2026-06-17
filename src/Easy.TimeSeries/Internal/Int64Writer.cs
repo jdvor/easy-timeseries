@@ -22,6 +22,7 @@ internal sealed class Int64Writer
             bitWriter.Write(value, Size64.MaxBits);
             prevValue = value;
             hasStoredFirstValue = true;
+            bitWriter.CommitRecord();
             return;
         }
 
@@ -30,6 +31,7 @@ internal sealed class Int64Writer
         {
             // It's the same value.
             bitWriter.Write(0, 1);
+            bitWriter.CommitRecord();
             return;
         }
 
@@ -64,6 +66,7 @@ internal sealed class Int64Writer
         }
 
         prevValue = value;
+        bitWriter.CommitRecord();
     }
 
     public static int GetSizeHint(int valueCount)

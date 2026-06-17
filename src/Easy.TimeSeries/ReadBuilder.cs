@@ -155,7 +155,8 @@ public sealed class ReadBuilder
     private static void ColumnScaledNumber32<T>(ReadOnlySpan<byte> columnSpan, ColumnInfo info, IHydrator<T> deserializer)
         where T : class, new()
     {
-        var reader = new ScaledNumber32Reader(columnSpan, info.Meta);
+        var scale = (int)Math.Pow(10, info.Meta);
+        var reader = new ScaledNumber32Reader(columnSpan, scale);
         for (var row = 0; row < reader.ColumnHeader.Records; row++)
         {
             deserializer.Hydrate(info.Index, row, reader.Read());
@@ -166,7 +167,8 @@ public sealed class ReadBuilder
     private static void ColumnScaledNumber64<T>(ReadOnlySpan<byte> columnSpan, ColumnInfo info, IHydrator<T> deserializer)
         where T : class, new()
     {
-        var reader = new ScaledNumber64Reader(columnSpan, info.Meta);
+        var scale = (int)Math.Pow(10, info.Meta);
+        var reader = new ScaledNumber64Reader(columnSpan, scale);
         for (var row = 0; row < reader.ColumnHeader.Records; row++)
         {
             deserializer.Hydrate(info.Index, row, reader.Read());

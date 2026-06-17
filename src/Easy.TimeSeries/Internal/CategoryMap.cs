@@ -6,7 +6,7 @@ using System.Text;
 
 internal sealed class CategoryMap
 {
-    const int I16 = sizeof(short);
+    private const int I16 = sizeof(short);
     private readonly Dictionary<string, short> labelToId;
     private readonly Dictionary<short, string> idToLabel;
 

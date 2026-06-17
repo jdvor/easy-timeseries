@@ -6,7 +6,7 @@ internal sealed class ScaledNumber32Writer(BitWriter bitWriter, int scale)
 
     public void Write(double value)
     {
-        var v = (int)Math.Floor(value * scale);
+        var v = (int)Math.Round(value * scale);
         i32Writer.Write(v);
     }
 

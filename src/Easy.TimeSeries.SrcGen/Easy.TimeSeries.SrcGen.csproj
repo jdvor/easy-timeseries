@@ -1,22 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <Description>...</Description>
-    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-  </PropertyGroup>
+<PropertyGroup>
+  <TargetFramework>netstandard2.0</TargetFramework>
+  <Description>...</Description>
+  <IsRoslynComponent>true</IsRoslynComponent>
+  <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  <IncludeBuildOutput>false</IncludeBuildOutput>
+  <DevelopmentDependency>true</DevelopmentDependency>
+</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-  </ItemGroup>
+<ItemGroup>
+  <ProjectReference Include="..\Easy.TimeSeries.Abstractions\Easy.TimeSeries.Abstractions.csproj" />
+</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Easy.TimeSeries.Abstractions\Easy.TimeSeries.Abstractions.csproj" />
-  </ItemGroup>
+<ItemGroup>
+  <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+</ItemGroup>
+
+<ItemGroup>
+  <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+  <PackageReference Include="PolySharp" PrivateAssets="all" />
+</ItemGroup>
+
+<ItemGroup>
+  <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+  <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+</ItemGroup>
 
 </Project>

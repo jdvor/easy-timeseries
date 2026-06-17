@@ -7,7 +7,7 @@ internal static class Expect
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void NotNull<T>(T value, [CallerArgumentExpression(nameof(value))] string? argName = default)
+    internal static void NotNull<T>(T value, [CallerArgumentExpression(nameof(value))] string? argName = null)
     {
         if (value is null)
         {
@@ -17,7 +17,7 @@ internal static class Expect
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void NotEmpty(string value, [CallerArgumentExpression(nameof(value))] string? argName = default)
+    internal static void NotEmpty(string value, [CallerArgumentExpression(nameof(value))] string? argName = null)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -30,7 +30,7 @@ internal static class Expect
     internal static void MinLength(
         ReadOnlySpan<byte> span,
         int min,
-        [CallerArgumentExpression(nameof(span))] string? argName = default)
+        [CallerArgumentExpression(nameof(span))] string? argName = null)
     {
         if (span.Length < min)
         {
@@ -43,7 +43,7 @@ internal static class Expect
     internal static void MinLength(
         Span<byte> span,
         int min,
-        [CallerArgumentExpression(nameof(span))] string? argName = default)
+        [CallerArgumentExpression(nameof(span))] string? argName = null)
     {
         if (span.Length < min)
         {
@@ -57,7 +57,7 @@ internal static class Expect
         T value,
         T min,
         T max,
-        [CallerArgumentExpression(nameof(value))] string? argName = default)
+        [CallerArgumentExpression(nameof(value))] string? argName = null)
         where T : struct, IComparable<T>
     {
         if (value.CompareTo(min) == -1 || value.CompareTo(max) == 1)
@@ -71,7 +71,7 @@ internal static class Expect
     internal static void EqualOrGreaterThan<T>(
         T value,
         T min,
-        [CallerArgumentExpression(nameof(value))] string? argName = default)
+        [CallerArgumentExpression(nameof(value))] string? argName = null)
         where T : struct, IComparable<T>
     {
         if (value.CompareTo(min) == -1)
@@ -82,7 +82,7 @@ internal static class Expect
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void NotDefault<T>(T value, [CallerArgumentExpression(nameof(value))] string? argName = default)
+    public static void NotDefault<T>(T value, [CallerArgumentExpression(nameof(value))] string? argName = null)
         where T : struct
     {
         if (value.Equals(default(T)))
@@ -93,7 +93,7 @@ internal static class Expect
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Utc(DateTime value, [CallerArgumentExpression(nameof(value))] string? argName = default)
+    internal static void Utc(DateTime value, [CallerArgumentExpression(nameof(value))] string? argName = null)
     {
         if (value.Kind != DateTimeKind.Utc)
         {
@@ -103,7 +103,7 @@ internal static class Expect
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void Utc(DateTimeOffset value, [CallerArgumentExpression(nameof(value))] string? argName = default)
+    internal static void Utc(DateTimeOffset value, [CallerArgumentExpression(nameof(value))] string? argName = null)
     {
         if (value.Offset != TimeSpan.Zero)
         {

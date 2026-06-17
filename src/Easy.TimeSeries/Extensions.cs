@@ -2,25 +2,25 @@ namespace Easy.TimeSeries;
 
 public static class Extensions
 {
-    public static DateTime BeginingOfYearUtc(this DateTime dt)
+    public static DateTime BeginningOfYearUtc(this DateTime dt)
     {
         dt = dt.ToUniversalTime();
         return new DateTime(dt.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 
-    public static DateTime BeginingOfNextYearUtc(this DateTime dt)
+    public static DateTime BeginningOfNextYearUtc(this DateTime dt)
     {
         dt = dt.ToUniversalTime();
         return new DateTime(dt.Year + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 
-    public static DateTime BeginingOfMonthUtc(this DateTime dt)
+    public static DateTime BeginningOfMonthUtc(this DateTime dt)
     {
         dt = dt.ToUniversalTime();
         return new DateTime(dt.Year, dt.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     }
 
-    public static DateTime BeginingOfNextMonthUtc(this DateTime dt)
+    public static DateTime BeginningOfNextMonthUtc(this DateTime dt)
     {
         dt = dt.ToUniversalTime();
         return dt.Month == 12
@@ -37,14 +37,14 @@ public static class Extensions
     public static DateTime NextMidnightUtc(this DateTime dt)
         => dt.MidnightUtc().Add(TimeSpan.FromDays(1));
 
-    public static DateTime BeginingOfHourUtc(this DateTime dt)
+    public static DateTime BeginningOfHourUtc(this DateTime dt)
     {
         dt = dt.ToUniversalTime();
         return new DateTime(dt.Year, dt.Month, dt.Day, dt.Hour, 0, 0, DateTimeKind.Utc);
     }
 
-    public static DateTime BeginingOfNextHourUtc(this DateTime dt)
-        => dt.BeginingOfHourUtc().Add(TimeSpan.FromHours(1));
+    public static DateTime BeginningOfNextHourUtc(this DateTime dt)
+        => dt.BeginningOfHourUtc().Add(TimeSpan.FromHours(1));
 
     public static DateTime ForceUtc(this DateTime dt)
         => DateTime.SpecifyKind(dt, DateTimeKind.Utc);

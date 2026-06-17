@@ -1,23 +1,49 @@
-# Timeseries
+# Easy TimeSeries
 
-...
+Small framework / ecosystem for storing numeric time series data in a columnar fashion with several compression algorithms
+to achieve maximal performance and minimal size (both on disk and on the wire).
 
+The most typical use case for the framework is handling large volume of sensor data, which need to be visualized or analyzed later on.
 
-## Documentation
+The following techniques are used in the library:
 
-* [Overview](docs/1_overview.md)
-* [Architecture & Development Guidelines](docs/4_architecture.md)
-* [ToDos & Ideas](docs/6_todos_and_ideas.md) *(temporary)*
+- Integer compression:
+  - Delta encoding
+  - Delta-of-delta encoding
+  - Simple-8b
+  - Run-length encoding
 
+- Floating point compression:
+  - XOR-based compression
 
-## Azure Resources
+- Data-agnostic compression:
+  - Dictionary compression
 
-| resource         | environment | type                 | note        |
-|------------------|-------------|----------------------|-------------|
-| [jandvorak][rgp] | prod        | Resource Group       |             |
-| [easy-ai][aip]   | prod        | Application Insights |             |
-| [jdacc][contp]   | prod        | Storage Account      | /Containers |
+[Here][tscae] is an easy read on those techniques.
 
-[rgp]: https://portal.azure.com/#@nanoenergies.cz/resource/subscriptions/d2f9ce1c-9d1a-4637-8f50-cb40cffac2c1/resourceGroups/jandvorak/overview
-[aip]: https://portal.azure.com/#@nanoenergies.cz/resource/subscriptions/d2f9ce1c-9d1a-4637-8f50-cb40cffac2c1/resourceGroups/jandvorak/providers/microsoft.insights/components/easy-ai/overview
-[contp]: https://portal.azure.com/#@nanoenergies.cz/resource/subscriptions/d2f9ce1c-9d1a-4637-8f50-cb40cffac2c1/resourceGroups/jandvorak/providers/Microsoft.Storage/storageAccounts/jdacc/containersList
+Supported data types in columnar storage:
+
+- `Boolean`
+- `Int32`
+- `Int64`
+- `Double`
+- `Float`
+- `DateTime`
+- `TimeSpan`
+- `String` (low cardinality value mapped to an integer through a dictionary)
+
+## Users
+
+- [Getting started](docs/introduction.md)
+- [Roadmap](docs/roadmap.md)
+- [How the library is licensed](docs/license.md)
+- [How to report security issues](SECURITY.md)
+
+## Contributors
+
+- [I want to contribute](CONTRIBUTING.md)
+- [Solution Overview](docs/solution-overview.md)
+- [Data Layout Details](docs/layout.md)
+- [Code Style](docs/code-style.md)
+
+[tscae]: https://www.tigerdata.com/blog/time-series-compression-algorithms-explained

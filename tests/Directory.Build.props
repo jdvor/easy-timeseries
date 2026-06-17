@@ -4,9 +4,7 @@
 
   <PropertyGroup>
     <IsTestProject>true</IsTestProject>
-<!--    <RunAnalyzers>false</RunAnalyzers>-->
-<!--    <RunCodeAnalysis>false</RunCodeAnalysis>-->
-<!--    <AnalysisMode>None</AnalysisMode>-->
+    <TestTfmsInParallel>false</TestTfmsInParallel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,7 +14,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,9 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AssemblyAttribute Include="System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Remove="System.IO" />
     <Using Remove="System.Net.Http" />
     <Using Include="Xunit" />
+    <Using Include="Xunit.v3" />
   </ItemGroup>
 
   <ItemGroup>

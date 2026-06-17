@@ -12,6 +12,7 @@ internal sealed class BoolWriter
     public void Write(bool value)
     {
         bitWriter.Write(value ? 1 : 0, 1);
+        bitWriter.CommitRecord();
     }
 
     public static int GetSizeHint(int valueCount)

@@ -20,8 +20,8 @@ internal readonly struct ColumnHeader
     public bool IsEmpty => DataLength == 0;
 
     public long TotalBits => BitsInLastWord == 0
-            ? DataLength * WordBitSize
-            : ((DataLength - 1) * WordBitSize) + BitsInLastWord;
+            ? DataLength * 8
+            : (DataLength - WordByteSize) * 8 + BitsInLastWord;
 
     public long ColumnLength => DataLength + Size;
 

@@ -1,5 +1,7 @@
 namespace Easy.TimeSeries.Tests;
 
+using Abstractions;
+
 public sealed class PowerPlant
 {
     public PowerPlant()
@@ -15,13 +17,18 @@ public sealed class PowerPlant
         PrimaryFuel = primaryFuel;
     }
 
+    [Column(0)]
     public string CountryCode { get; set; } = string.Empty;
 
+    [Column(1)]
     public float CapacityMw { get; set; }
 
+    [Column(2)]
     public float Latitude { get; set; }
 
+    [Column(3)]
     public float Longitude { get; set; }
 
+    [Column(4)]
     public string PrimaryFuel { get; set; } = string.Empty;
 }

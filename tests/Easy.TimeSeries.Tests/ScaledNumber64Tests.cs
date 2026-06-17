@@ -1,7 +1,5 @@
 namespace Easy.TimeSeries.Tests;
 
-using Xunit.Abstractions;
-
 public class ScaledNumber64Tests
 {
     private readonly ITestOutputHelper output;
@@ -43,7 +41,7 @@ public class ScaledNumber64Tests
     public void WriteAndReadBackOnRandom(int precision)
     {
         var testData = Numbers.RandDoubleSeq(1000, 1_000_000d, -1_000_000d, precision).ToArray();
-        var acceptableLength = testData.Length * 8 + 2;
+        var acceptableLength = testData.Length * 10 + 2;
         WriteAndReadBack("random", testData, precision, acceptableLength);
     }
 

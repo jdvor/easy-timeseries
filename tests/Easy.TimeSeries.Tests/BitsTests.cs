@@ -10,6 +10,7 @@ public class BitsTests
         foreach (var (value, bits) in TestData)
         {
             writer.Write(value, bits);
+            writer.CommitRecord();
         }
 
         writer.Flush();

@@ -1,0 +1,52 @@
+name: 'Publish'
+
+permissions:
+  actions: read
+  contents: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 'Build & Publish'
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 0 => all history for all branches and tags
+          submodules: true
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.300
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.nuget/packages
+          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: packages-${{ runner.os }}-
+
+      - name: Execute tests
+        run: dotnet test -c Release -v minimal --nologo
+
+      - name: Determine semantic version
+        id: semver
+        uses: paulhatch/semantic-version@v5.3.0
+        with:
+          tag_prefix: ""
+          major_pattern: "BREAKING CHANGE:"
+          minor_pattern: "feat:"
+          search_commit_body: true
+          version_format: "${major}.${minor}.${patch}"
+
+      - name: Create version tag
+        id: version
+        run: ./version.sh -v ${{ steps.semver.outputs.version }} -i ${{ steps.semver.outputs.increment }} --create-tag >> $GITHUB_OUTPUT
+
+      - name: Pack dotnet tool & push to nuget.org
+        run: ./pack.sh -v "${{ steps.version.outputs.version_prefix }}" -s "${{ steps.version.outputs.version_suffix }}" -p "${{ secrets.MDREPORT_API_KEY }}"

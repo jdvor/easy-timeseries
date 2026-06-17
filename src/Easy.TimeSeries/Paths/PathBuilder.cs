@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 public sealed class PathBuilder
 {
+    private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
     private readonly string root;
     private readonly TimeGranularity granularity;
     private readonly string suffix;
@@ -60,7 +61,7 @@ public sealed class PathBuilder
         }
 
         var dateStr = match.Groups["Date"].Value;
-        var dateTimeUnspecified = DateTime.ParseExact(dateStr, dateFmt, CultureInfo.InvariantCulture);
+        var dateTimeUnspecified = DateTime.ParseExact(dateStr, dateFmt, Culture);
         dateTime = DateTime.SpecifyKind(dateTimeUnspecified, DateTimeKind.Utc);
         subjectId = match.Groups["SubjectId"].Value;
         return true;
@@ -96,7 +97,7 @@ public sealed class PathBuilder
                 firstSet = true;
             }
 
-            var path = Path.Combine(root, dt.ToString(dateFmt));
+            var path = Path.Combine(root, dt.ToString(dateFmt, Culture));
             paths.Add(path);
             last = dt;
         }
@@ -142,10 +143,10 @@ public sealed class PathBuilder
     {
         return granularity switch
         {
-            TimeGranularity.Hour => from.BeginingOfHourUtc(),
+            TimeGranularity.Hour => from.BeginningOfHourUtc(),
             TimeGranularity.Day => from.MidnightUtc(),
-            TimeGranularity.Month => from.BeginingOfMonthUtc(),
-            TimeGranularity.Year => from.BeginingOfYearUtc(),
+            TimeGranularity.Month => from.BeginningOfMonthUtc(),
+            TimeGranularity.Year => from.BeginningOfYearUtc(),
             _ => throw new NotImplementedException(),
         };
     }
@@ -195,8 +196,8 @@ public sealed class PathBuilder
 
     private string GetPrefix(DateTime first, DateTime last)
     {
-        var firstStr = first.ToString(dateFmt);
-        var lastStr = last.ToString(dateFmt);
+        var firstStr = first.ToString(dateFmt, Culture);
+        var lastStr = last.ToString(dateFmt, Culture);
         for (var i = 0; i < firstStr.Length; i++)
         {
             if (firstStr[i] == lastStr[i])

@@ -1,17 +1,16 @@
 <Project>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  
+
   <PropertyGroup>
-    <Copyright>Copyright (c) 2023 Terraverse, s.r.o.</Copyright>
-    <Authors>Miroslav Osko, Martin Skacel</Authors>
-    <PackageProjectUrl>https://github.com/terra-verse/terraverse-solution-template</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/terra-verse/terraverse-solution-template</RepositoryUrl>
+    <Authors>Jan Dvorak</Authors>
+    <PackageProjectUrl>https://github.com/jdvor/easy-timeseries</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdvor/easy-timeseries</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup>

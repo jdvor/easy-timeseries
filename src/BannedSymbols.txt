@@ -1,2 +1,4 @@
-P:System.DateTime.Now;Use Terraverse.Matrix.Zion.Clock.IDate instead
-P:System.DateTimeOffset.Now;Use Terraverse.Matrix.Zion.Clock.IDate instead
+P:System.DateTime.Now;Use System.TimeProvider.GetLocalNow instead
+P:System.DateTimeOffset.Now;Use System.TimeProvider.GetLocalNow instead
+P:System.DateTime.UtNow;Use System.TimeProvider.GetUtcNow instead
+P:System.DateTimeOffset.UtcNow;Use System.TimeProvider.GetUtcNow instead

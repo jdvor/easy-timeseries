@@ -2,10 +2,7 @@ namespace Easy.TimeSeries;
 
 using System.Diagnostics.CodeAnalysis;
 
-[SuppressMessage(
-    "Naming",
-    "CA1720:Identifier contains type name",
-    Justification = "because it is type name")]
+[SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "because it is type name")]
 public enum ColumnValueType : byte
 {
     None = 0,

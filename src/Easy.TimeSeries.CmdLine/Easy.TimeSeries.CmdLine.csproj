@@ -2,14 +2,28 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <IsPublishable>true</IsPublishable>
-    <IsTrimmable>true</IsTrimmable>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>tsctl</ToolCommandName>
     <AssemblyName>tsctl</AssemblyName>
+    <IsPublishable>true</IsPublishable>
+    <IsPackable>true</IsPackable>
+    <IsTrimmable>true</IsTrimmable>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+    <ProjectReference Include="..\Easy.TimeSeries.Parquet\Easy.TimeSeries.Parquet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Cocona.Lite" />
   </ItemGroup>
 
 </Project>

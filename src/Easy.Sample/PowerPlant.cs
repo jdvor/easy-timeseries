@@ -19,18 +19,18 @@ public sealed class PowerPlant
         PrimaryFuel = primaryFuel;
     }
 
-    [Column(Label = "Country")]
+    [Column(1, Label = "Country")]
     public string CountryCode { get; set; } = string.Empty;
 
-    [Column(Label = "Capacity (MW)", NumberPrecision = NumberPrecision.DecimalPlaces2)]
+    [Column(2, Label = "Capacity (MW)", NumberPrecision = NumberPrecision.DecimalPlaces2)]
     public float CapacityMw { get; set; }
 
-    [Column(NumberPrecision = NumberPrecision.DecimalPlaces4)]
+    [Column(3, NumberPrecision = NumberPrecision.DecimalPlaces4)]
     public float Latitude { get; set; }
 
-    [Column(NumberPrecision = NumberPrecision.DecimalPlaces4)]
+    [Column(4, NumberPrecision = NumberPrecision.DecimalPlaces4)]
     public float Longitude { get; set; }
 
-    [Column(Label = "Primary Fuel")]
+    [Column(5, Label = "Primary Fuel")]
     public string PrimaryFuel { get; set; } = string.Empty;
 }

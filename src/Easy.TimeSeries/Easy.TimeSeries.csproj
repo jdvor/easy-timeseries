@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <IsAotCompatible>true</IsAotCompatible>
     <Description>...</Description>
   </PropertyGroup>
 
