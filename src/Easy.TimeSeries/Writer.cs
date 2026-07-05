@@ -39,14 +39,19 @@ public sealed class Writer : IDisposable
         }
     }
 
-    public Writer AddTime(
+    /// <summary>
+    /// Adds a <see cref="DateTime"/> column whose values MUST be UTC and sorted in ascending order
+    /// (monotonically non-decreasing) - writing throws otherwise. This is the preferred column type
+    /// for time series timestamps; it compresses far better than <see cref="AddTimeUnordered"/>.
+    /// </summary>
+    public Writer AddTimeOrdered(
         IEnumerable<DateTime> values,
         string columnLabel,
         TimePrecision precision = TimePrecision.Milliseconds)
     {
-        var sizeHint = DateTimeWriter.GetSizeHint(rows, precision);
+        var sizeHint = DateTimeOrderedWriter.GetSizeHint(rows, precision);
         var (bufferWriter, bitWriter) = CreateWriters(sizeHint);
-        var writer = new DateTimeWriter(bitWriter, precision);
+        var writer = new DateTimeOrderedWriter(bitWriter, precision);
         var i = 0;
         foreach (var value in values)
         {
@@ -60,7 +65,39 @@ public sealed class Writer : IDisposable
         }
 
         bitWriter.Flush();
-        var ci = new ColumnInfo(columns.Count, ColumnValueType.DateTime, (int)precision, columnLabel);
+        var ci = new ColumnInfo(columns.Count, ColumnValueType.DateTimeOrdered, (int)precision, columnLabel);
+        columns.Add((ci, bufferWriter));
+
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a <see cref="DateTime"/> column whose values MUST be UTC but may appear in any order,
+    /// repeat, or precede 2000-01-01. Prefer <see cref="AddTimeOrdered"/> when the values are
+    /// sorted in ascending order - it compresses considerably better.
+    /// </summary>
+    public Writer AddTimeUnordered(
+        IEnumerable<DateTime> values,
+        string columnLabel,
+        TimePrecision precision = TimePrecision.Milliseconds)
+    {
+        var sizeHint = DateTimeUnorderedWriter.GetSizeHint(rows, precision);
+        var (bufferWriter, bitWriter) = CreateWriters(sizeHint);
+        var writer = new DateTimeUnorderedWriter(bitWriter, precision);
+        var i = 0;
+        foreach (var value in values)
+        {
+            if (i >= rows)
+            {
+                break;
+            }
+
+            writer.Write(value);
+            ++i;
+        }
+
+        bitWriter.Flush();
+        var ci = new ColumnInfo(columns.Count, ColumnValueType.DateTimeUnordered, (int)precision, columnLabel);
         columns.Add((ci, bufferWriter));
 
         return this;

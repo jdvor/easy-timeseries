@@ -1,0 +1,68 @@
+namespace Easy.TimeSeries;
+
+using static Constants;
+
+/// <summary>
+/// XOR + block encoding state machine over 64-bit values. It only emits bit frames; the owning
+/// domain writer must call <see cref="BitWriter.CommitRecord"/> exactly once per logical entry.
+/// This allows several independent streams (each with its own <see cref="Xor64Writer"/> state)
+/// to be interleaved within a single record, as <see cref="DecimalWriter"/> does.
+/// </summary>
+internal struct Xor64Writer
+{
+    private Block prevBlock;
+    private long prevValue;
+    private bool hasStoredFirstValue;
+
+    public void Write(BitWriter bitWriter, long value)
+    {
+        if (!hasStoredFirstValue)
+        {
+            bitWriter.Write(value, Size64.MaxBits);
+            prevBlock = new Block(Size64.MaxBits, Size64.MaxBits, 0);
+            prevValue = value;
+            hasStoredFirstValue = true;
+            return;
+        }
+
+        var xorWithPrev = prevValue ^ value;
+        if (xorWithPrev == 0)
+        {
+            // It's the same value.
+            bitWriter.Write(0, 1);
+            return;
+        }
+
+        // There's delta from previous value.
+        bitWriter.Write(1, 1);
+
+        var currBlock = Block.CreateBlock64(xorWithPrev);
+        if (currBlock.LeadingZeros >= prevBlock.LeadingZeros && currBlock.TrailingZeros >= prevBlock.TrailingZeros)
+        {
+            // Control bit saying we should use the previous block information.
+            bitWriter.Write(0, 1);
+
+            // Write the parts of the value that changed.
+            var blockValue = xorWithPrev >> prevBlock.TrailingZeros;
+            bitWriter.Write(blockValue, prevBlock.BlockSize);
+        }
+        else
+        {
+            // Control bit saying we need to provide new block information.
+            bitWriter.Write(1, 1);
+
+            // Details about the new block information
+            bitWriter.Write(currBlock.LeadingZeros, Size64.LeadingZerosLengthBits);
+
+            bitWriter.Write(currBlock.BlockSize - BlockSizeAdjustment, Size64.BlockSizeLengthBits);
+
+            // Write the parts of the value that changed.
+            var blockValue = xorWithPrev >> currBlock.TrailingZeros;
+            bitWriter.Write(blockValue, currBlock.BlockSize);
+
+            prevBlock = currBlock;
+        }
+
+        prevValue = value;
+    }
+}

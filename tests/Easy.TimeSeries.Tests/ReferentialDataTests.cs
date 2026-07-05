@@ -70,7 +70,7 @@ public class ReferentialDataTests
         var betas = Beta.DataSet1();
 
         var writer = new Writer(betas.Length)
-            .AddTime(betas.Select(x => x.Timestamp), "Timestamp")
+            .AddTimeOrdered(betas.Select(x => x.Timestamp), "Timestamp")
             .AddInterval(betas.Select(x => x.Elapsed), "Elapsed")
             .AddInt64(betas.Select(x => x.Counter), "Counter")
             .AddBool(betas.Select(x => x.IsValid), "IsValid");
@@ -100,7 +100,8 @@ public class ReferentialDataTests
         var writer = new Writer(gammas.Length)
             .AddCategory(gammas.Select(x => x.Sensor), "Sensor")
             .AddScaledNumber32(gammas.Select(x => x.Pressure), "Pressure", decimalPlaces: 3)
-            .AddScaledNumber64(gammas.Select(x => x.Temperature), "Temperature", decimalPlaces: 4);
+            .AddScaledNumber64(gammas.Select(x => x.Temperature), "Temperature", decimalPlaces: 4)
+            .AddDecimal(gammas.Select(x => x.Cost), "Cost");
 
         var storage = new InMemoryStorage();
         await writer.WriteToAsync(storage, ct);
@@ -114,6 +115,7 @@ public class ReferentialDataTests
             Assert.Equal(gammas[i].Sensor, result[i].Sensor);
             Assert.Equal(gammas[i].Pressure, result[i].Pressure, tolerance: 0.001f);
             Assert.Equal(gammas[i].Temperature, result[i].Temperature, tolerance: 0.0001);
+            Assert.Equal(gammas[i].Cost, result[i].Cost);
         }
     }
 

@@ -44,16 +44,18 @@ public readonly record struct ColumnInfo
     {
         var typeName = ValueType switch
         {
-            ColumnValueType.DateTime => nameof(ColumnValueType.DateTime),
+            ColumnValueType.DateTimeOrdered => nameof(ColumnValueType.DateTimeOrdered),
             ColumnValueType.TimeSpan => nameof(ColumnValueType.TimeSpan),
             ColumnValueType.Float => nameof(ColumnValueType.Float),
             ColumnValueType.Double => nameof(ColumnValueType.Double),
+            ColumnValueType.Decimal => nameof(ColumnValueType.Decimal),
             ColumnValueType.Int32 => nameof(ColumnValueType.Int32),
             ColumnValueType.Int64 => nameof(ColumnValueType.Int64),
             ColumnValueType.Bool => nameof(ColumnValueType.Bool),
             ColumnValueType.ScaledNumber32 => nameof(ColumnValueType.ScaledNumber32),
             ColumnValueType.ScaledNumber64 => nameof(ColumnValueType.ScaledNumber64),
             ColumnValueType.Category => nameof(ColumnValueType.Category),
+            ColumnValueType.DateTimeUnordered => nameof(ColumnValueType.DateTimeUnordered),
             _ => "?",
         };
         return string.IsNullOrEmpty(Label)

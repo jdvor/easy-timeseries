@@ -3,7 +3,7 @@ namespace Easy.TimeSeries;
 using System.Runtime.CompilerServices;
 using static Constants.TimeStamp;
 
-internal ref struct DateTimeReader
+internal ref struct DateTimeOrderedReader
 {
     private readonly long precision;
     private BitReader bitReader;
@@ -13,7 +13,7 @@ internal ref struct DateTimeReader
 
     public readonly ColumnHeader ColumnHeader => bitReader.ColumnHeader;
 
-    public DateTimeReader(ReadOnlySpan<byte> buffer, TimePrecision precision)
+    public DateTimeOrderedReader(ReadOnlySpan<byte> buffer, TimePrecision precision)
     {
         bitReader = new BitReader(buffer);
         this.precision = Util.GetPrecisionDivisor(precision);

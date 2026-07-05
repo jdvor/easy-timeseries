@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 public enum ColumnValueType : byte
 {
     None = 0,
-    DateTime = 1,
+    DateTimeOrdered = 1,
     TimeSpan = 2,
     Float = 3,
     Double = 4,
@@ -17,4 +17,5 @@ public enum ColumnValueType : byte
     ScaledNumber32 = 9,
     ScaledNumber64 = 10,
     Category = 11,
+    DateTimeUnordered = 12,
 }

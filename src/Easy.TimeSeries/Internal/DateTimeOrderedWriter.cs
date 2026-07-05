@@ -3,7 +3,12 @@ namespace Easy.TimeSeries;
 using System.Runtime.CompilerServices;
 using static Constants.TimeStamp;
 
-internal sealed class DateTimeWriter
+/// <summary>
+/// Delta-of-delta writer for <see cref="DateTime"/> columns whose values are sorted in ascending
+/// order (monotonically non-decreasing); <see cref="Write"/> throws when a value is smaller than
+/// its predecessor. Use <see cref="DateTimeUnorderedWriter"/> when the column is not sorted.
+/// </summary>
+internal sealed class DateTimeOrderedWriter
 {
     private readonly BitWriter bitWriter;
     private readonly long precisionDivisor;
@@ -11,7 +16,7 @@ internal sealed class DateTimeWriter
     private long prevTimeStampDelta;
     private bool hasStoredFirstValue;
 
-    public DateTimeWriter(BitWriter bitWriter, TimePrecision precision)
+    public DateTimeOrderedWriter(BitWriter bitWriter, TimePrecision precision)
     {
         this.bitWriter = bitWriter;
         precisionDivisor = Util.GetPrecisionDivisor(precision);
@@ -59,7 +64,9 @@ internal sealed class DateTimeWriter
     {
         if (newTimestamp < prevTimeStamp)
         {
-            throw new InvalidOperationException("The appending date is not greater than the previous appended date.");
+            throw new InvalidOperationException(
+                "DateTimeOrdered columns require values sorted in ascending order; "
+                + "use AddTimeUnordered (DateTimeUnordered) for unsorted values.");
         }
     }
 

@@ -9,14 +9,16 @@ using System.Diagnostics.CodeAnalysis;
 public enum DataValueType
 {
     Auto = 0,
-    DateTime = 1,
+    DateTimeOrdered = 1,
     TimeSpan = 2,
     Float = 3,
     Double = 4,
-    Int32 = 5,
-    Int64 = 6,
-    Bool = 7,
-    ScaledNumber32 = 8,
-    ScaledNumber64 = 9,
-    Category = 10,
+    Decimal = 5,
+    Int32 = 6,
+    Int64 = 7,
+    Bool = 8,
+    ScaledNumber32 = 9,
+    ScaledNumber64 = 10,
+    Category = 11,
+    DateTimeUnordered = 12,
 }
