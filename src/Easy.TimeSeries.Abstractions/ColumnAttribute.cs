@@ -11,6 +11,8 @@ public class ColumnAttribute : Attribute
 
     public DateTimePrecision DateTimePrecision { get; set; } = DateTimePrecision.Milliseconds;
 
+    public DateTimeSort DateTimeSort { get; set; } = DateTimeSort.Unsorted;
+
     public TimeSpanPrecision TimeSpanPrecision { get; set; } = TimeSpanPrecision.Seconds;
 
     public NumberPrecision NumberPrecision { get; set; } = NumberPrecision.Auto;

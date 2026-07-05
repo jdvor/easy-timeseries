@@ -7,6 +7,7 @@
 | src/Easy.TimeSeries.SrcGen       | C# NuGet package       | Library source-generating reader and/or writer based on a DTO class    |
 | src/Easy.TimeSeries.AzureBlobs   | C# NuGet package       | Library providing storage to Azure Blobs                               |
 | src/Easy.TimeSeries.Parquet      | C# NuGet package       | Library with conversion support for TimeSeries -> Apache Parquet       |
+| src/Easy.TimeSeries.TestData     | C# library             | Re-usable data collections for tests and benchmarks                    |
 | src/Easy.TimeSeries.CmdLine      | C# console             | Developer's swiss knife tool around TimeSeries                         |
 | src/Easy.TimeSeries.Benchmarks   | C# console             | Application that runs performance benchmarks                           |
 | src/Easy.Sample                  | C# console             | Example application to demonstrate TimeSeries usage                    |

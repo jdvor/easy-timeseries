@@ -1,7 +1,9 @@
-namespace Easy.TimeSeries.Tests;
+namespace Easy.TimeSeries.TestData;
 
-using Abstractions;
+using Easy.TimeSeries.Abstractions;
 
+[GenerateReader]
+[GenerateWriter]
 public sealed class PowerPlant
 {
     public PowerPlant()

@@ -3,7 +3,7 @@ namespace Easy.TimeSeries;
 using System.Buffers.Binary;
 using System.Text;
 
-public static class Util
+internal static class Util
 {
     public static long GetPrecisionDivisor(TimePrecision precision)
     {

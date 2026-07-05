@@ -1,4 +1,4 @@
-namespace Easy.TimeSeries.Storage;
+namespace Easy.TimeSeries.Abstractions;
 
 public interface IWriteStorage
 {

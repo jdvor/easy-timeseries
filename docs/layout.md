@@ -24,22 +24,22 @@ There is no overall file footer, no overall checksum, no padding between column 
 
 Implementation: `Header.WriteTo` and `Header.TryReadFrom` (`src/Easy.TimeSeries/Header.cs`).
 
-| Offset    | Size              | Field            | Notes                                                                                        |
-| --------- | ----------------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| 0         | 1                 | Magic byte 1     | Always `0x02` (`Header.H1`).                                                                  |
-| 1         | 1                 | Magic byte 2     | Always `0xFD` (`Header.H2`).                                                                  |
-| 2         | 1                 | Version          | `Version` enum byte. Only `V1 = 1` is supported.                                              |
-| 3         | 1                 | Column count `N` | Max 255 (`Header.MaxColumns`).                                                                |
-| 4         | variable          | Column descriptors | `N` `ColumnInfo` records, concatenated.                                                     |
+| Offset | Size     | Field              | Notes                                            |
+| ------ | -------- | ------------------ | ------------------------------------------------ |
+| 0      | 1        | Magic byte 1       | Always `0x02` (`Header.H1`).                     |
+| 1      | 1        | Magic byte 2       | Always `0xFD` (`Header.H2`).                     |
+| 2      | 1        | Version            | `Version` enum byte. Only `V1 = 1` is supported. |
+| 3      | 1        | Column count `N`   | Max 255 (`Header.MaxColumns`).                   |
+| 4      | variable | Column descriptors | `N` `ColumnInfo` records, concatenated.          |
 
 ### Column descriptor (one per column)
 
-| Offset relative | Size           | Field        | Notes                                                                                                  |
-| --------------- | -------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
-| 0               | 1              | Value type   | `ColumnValueType` enum byte. See table below.                                                          |
-| 1               | 4              | Meta (int32) | Type-dependent payload (see "Meta field semantics"). Always 4 bytes little-endian.                     |
-| 5               | 1              | Label length | UTF-8 byte length. `0` means no label.                                                                 |
-| 6               | label length   | Label        | UTF-8 bytes. Up to `ColumnInfo.MaxLabelLength = 120` characters.                                       |
+| Offset relative | Size         | Field        | Notes                                                                              |
+| --------------- | ------------ | ------------ | ---------------------------------------------------------------------------------- |
+| 0               | 1            | Value type   | `ColumnValueType` enum byte. See table below.                                      |
+| 1               | 4            | Meta (int32) | Type-dependent payload (see "Meta field semantics"). Always 4 bytes little-endian. |
+| 5               | 1            | Label length | UTF-8 byte length. `0` means no label.                                             |
+| 6               | label length | Label        | UTF-8 bytes. Up to `ColumnInfo.MaxLabelLength = 120` characters.                   |
 
 Value-type byte values (`ColumnValueType`):
 
@@ -59,11 +59,11 @@ Value-type byte values (`ColumnValueType`):
 
 ### Meta field semantics
 
-| Value type             | `Meta` interpretation                                                                                   |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| `DateTime`, `TimeSpan` | `TimePrecision` enum value (`Milliseconds=0`, `TenthsOfSecond=1`, `Seconds=2`, `Days=3`, `Years=4`).    |
-| `ScaledNumber32`/`64`  | `decimalPlaces` (1-8). The reader recovers `scale = 10^decimalPlaces`. **Not the scale itself.**        |
-| All others             | Unused, written as `0`.                                                                                 |
+| Value type             | `Meta` interpretation                                                                                |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| `DateTime`, `TimeSpan` | `TimePrecision` enum value (`Milliseconds=0`, `TenthsOfSecond=1`, `Seconds=2`, `Days=3`, `Years=4`). |
+| `ScaledNumber32`/`64`  | `decimalPlaces` (1-8). The reader recovers `scale = 10^decimalPlaces`. **Not the scale itself.**     |
+| All others             | Unused, written as `0`.                                                                              |
 
 ## Column block
 
@@ -79,11 +79,11 @@ flowchart LR
 
 Implementation: `ColumnHeader.WriteTo` and `ColumnHeader.TryReadFrom` (`src/Easy.TimeSeries/Internal/ColumnHeader.cs`).
 
-| Offset | Size | Field            | Notes                                                                                                                    |
-| ------ | ---- | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 0      | 4    | `DataLength`     | uint32 LE. Byte length of the packed data that follows (multiple of 8). Excludes the 9-byte header itself.               |
-| 4      | 4    | `Records`        | int32 LE. Number of logical values stored. Must be `>= 1`.                                                               |
-| 8      | 1    | `BitsInLastWord` | 0-64. How many bits of the last 8-byte word are actually used. `0` means the last word is fully used (64 bits).          |
+| Offset | Size | Field            | Notes                                                                                                           |
+| ------ | ---- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| 0      | 4    | `DataLength`     | uint32 LE. Byte length of the packed data that follows (multiple of 8). Excludes the 9-byte header itself.      |
+| 4      | 4    | `Records`        | int32 LE. Number of logical values stored. Must be `>= 1`.                                                      |
+| 8      | 1    | `BitsInLastWord` | 0-64. How many bits of the last 8-byte word are actually used. `0` means the last word is fully used (64 bits). |
 
 `TotalBits` is derived: `BitsInLastWord == 0 ? DataLength * 8 : (DataLength - 8) * 8 + BitsInLastWord`.
 
@@ -157,11 +157,11 @@ Per value, the writer emits:
 
 Bucket table (from `Constants.TimeStamp`):
 
-| Prefix (2 bits) | Encoded bits | `|dod| <`         |
-| --------------- | ------------ | ------------------- |
-| `00`            | 3            | 4 (`2^(3-1)`)       |
-| `01`            | 7            | 64 (`2^(7-1)`)      |
-| `10`            | 12           | 2048 (`2^(12-1)`)   |
+| Prefix (2 bits) | Encoded bits | `                         | dod | <` |
+| --------------- | ------------ | ------------------------- |
+| `00`            | 3            | 4 (`2^(3-1)`)             |
+| `01`            | 7            | 64 (`2^(7-1)`)            |
+| `10`            | 12           | 2048 (`2^(12-1)`)         |
 | `11`            | 32           | otherwise (32-bit signed) |
 
 The bias added before writing equals the bucket's `2^(bits-1)` (so the on-disk value is unsigned). The reader subtracts the same bias.
@@ -174,20 +174,20 @@ Implementation: `CategoryWriter` / `CategoryReader`, with `CategoryMap` and `IdA
 
 Per id, the writer emits one of two variable-width frames:
 
-| Id range  | Frame bits   | Layout (LSB first)                                    |
-| --------- | ------------ | ----------------------------------------------------- |
-| `0..15`   | 5            | `0` (prefix) + 4 bits of id                           |
-| `16..n`   | 16           | `1` (prefix) + 15 bits of id                          |
+| Id range | Frame bits | Layout (LSB first)           |
+| -------- | ---------- | ---------------------------- |
+| `0..15`  | 5          | `0` (prefix) + 4 bits of id  |
+| `16..n`  | 16         | `1` (prefix) + 15 bits of id |
 
 The reader peeks the prefix bit then reads either 4 or 15 bits for the id, and looks up the label in the `CategoryMap`.
 
 #### `CategoryMap` (appended after the packed data)
 
-| Offset relative | Size       | Field                 | Notes                                                                  |
-| --------------- | ---------- | --------------------- | ---------------------------------------------------------------------- |
-| 0               | 2          | `totalSize` (uint16)  | Byte length of the rest of the map (excludes these 2 size bytes).      |
-| 2               | 2          | `count` (int16)       | Number of label entries (must be `> 0`, max `short.MaxValue`).         |
-| 4               | variable   | Labels                | `count` entries: 1 byte length + ASCII bytes (max 255 chars per label). |
+| Offset relative | Size     | Field                | Notes                                                                   |
+| --------------- | -------- | -------------------- | ----------------------------------------------------------------------- |
+| 0               | 2        | `totalSize` (uint16) | Byte length of the rest of the map (excludes these 2 size bytes).       |
+| 2               | 2        | `count` (int16)      | Number of label entries (must be `> 0`, max `short.MaxValue`).          |
+| 4               | variable | Labels               | `count` entries: 1 byte length + ASCII bytes (max 255 chars per label). |
 
 Labels are written in id-sorted order, so the i-th entry has id `i`. The reader recovers the id-to-label mapping by counting.
 
@@ -197,19 +197,19 @@ The reader finds the map by reading the column header's `DataLength` and jumping
 
 Suppose `Writer.AddInt32([42], "x").WriteToAsync(...)`. The resulting bytes are:
 
-| Offset | Bytes (hex)              | Meaning                                                          |
-| ------ | ------------------------ | ---------------------------------------------------------------- |
-| 0      | `02 FD`                  | Magic.                                                           |
-| 2      | `01`                     | Version V1.                                                      |
-| 3      | `01`                     | One column.                                                      |
-| 4      | `05`                     | ColumnValueType.Int32.                                           |
-| 5      | `00 00 00 00`            | Meta = 0.                                                        |
-| 9      | `01`                     | Label length = 1.                                                |
-| 10     | `78`                     | Label `"x"`.                                                     |
-| 11     | `08 00 00 00`            | ColumnHeader: DataLength = 8.                                    |
-| 15     | `01 00 00 00`            | ColumnHeader: Records = 1.                                       |
-| 19     | `20`                     | ColumnHeader: BitsInLastWord = 32 (the 32-bit first value).      |
-| 20     | `2A 00 00 00 00 00 00 00`| One 8-byte word: `42` in the low 32 bits, zero padding above.    |
+| Offset | Bytes (hex)               | Meaning                                                       |
+| ------ | ------------------------- | ------------------------------------------------------------- |
+| 0      | `02 FD`                   | Magic.                                                        |
+| 2      | `01`                      | Version V1.                                                   |
+| 3      | `01`                      | One column.                                                   |
+| 4      | `05`                      | ColumnValueType.Int32.                                        |
+| 5      | `00 00 00 00`             | Meta = 0.                                                     |
+| 9      | `01`                      | Label length = 1.                                             |
+| 10     | `78`                      | Label `"x"`.                                                  |
+| 11     | `08 00 00 00`             | ColumnHeader: DataLength = 8.                                 |
+| 15     | `01 00 00 00`             | ColumnHeader: Records = 1.                                    |
+| 19     | `20`                      | ColumnHeader: BitsInLastWord = 32 (the 32-bit first value).   |
+| 20     | `2A 00 00 00 00 00 00 00` | One 8-byte word: `42` in the low 32 bits, zero padding above. |
 
 Total: 28 bytes. (Adjust the label and meta bytes for other columns.)
 

@@ -1,6 +1,7 @@
 namespace Easy.TimeSeries.Tests;
 
-using Storage;
+using Easy.TimeSeries.Storage;
+using TestData;
 
 public class ReferentialDataTests
 {
@@ -20,9 +21,8 @@ public class ReferentialDataTests
         var storage = new InMemoryStorage();
         await writer.WriteToAsync(storage, ct);
 
-        var hydrator = new ReflectionBasedHydrator<PowerPlant>();
-        var reader = new ReadBuilder();
-        var result = await reader.ReadFromAsync(storage, hydrator, ct);
+        var materializer = new ReflectionBasedMaterializer<PowerPlant>();
+        var result = await Reader.ReadFromAsync(storage, materializer, null, ct);
 
         Assert.Equal(powerPlants.Count, result.Length);
         for (var i = 0; i < powerPlants.Count; i++)
@@ -51,9 +51,8 @@ public class ReferentialDataTests
         var storage = new InMemoryStorage();
         await writer.WriteToAsync(storage, ct);
 
-        var hydrator = new ReflectionBasedHydrator<Alpha>();
-        var reader = new ReadBuilder();
-        var result = await reader.ReadFromAsync(storage, hydrator, ct);
+        var materializer = new ReflectionBasedMaterializer<Alpha>();
+        var result = await Reader.ReadFromAsync(storage, materializer, null, ct);
 
         Assert.Equal(alphas.Length, result.Length);
         for (var i = 0; i < alphas.Length; i++)
@@ -79,9 +78,8 @@ public class ReferentialDataTests
         var storage = new InMemoryStorage();
         await writer.WriteToAsync(storage, ct);
 
-        var hydrator = new ReflectionBasedHydrator<Beta>();
-        var reader = new ReadBuilder();
-        var result = await reader.ReadFromAsync(storage, hydrator, ct);
+        var materializer = new ReflectionBasedMaterializer<Beta>();
+        var result = await Reader.ReadFromAsync(storage, materializer, null, ct);
 
         Assert.Equal(betas.Length, result.Length);
         for (var i = 0; i < betas.Length; i++)
@@ -107,9 +105,8 @@ public class ReferentialDataTests
         var storage = new InMemoryStorage();
         await writer.WriteToAsync(storage, ct);
 
-        var hydrator = new ReflectionBasedHydrator<Gamma>();
-        var reader = new ReadBuilder();
-        var result = await reader.ReadFromAsync(storage, hydrator, ct);
+        var materializer = new ReflectionBasedMaterializer<Gamma>();
+        var result = await Reader.ReadFromAsync(storage, materializer, null, ct);
 
         Assert.Equal(gammas.Length, result.Length);
         for (var i = 0; i < gammas.Length; i++)
