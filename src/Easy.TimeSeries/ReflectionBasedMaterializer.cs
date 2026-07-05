@@ -40,13 +40,13 @@ public sealed class ReflectionBasedMaterializer<T> : IMaterializer<T>
                 rows[i] = new T();
             }
         }
-        else if (rowCount > rows.Length + 1)
+        else if (rowCount > rows.Length)
         {
             var resizedRows = new T[rowCount];
             Array.Copy(rows, resizedRows, rows.Length);
             for (var i = rows.Length; i < rowCount; i++)
             {
-                rows[i] = new T();
+                resizedRows[i] = new T();
             }
 
             rows = resizedRows;
