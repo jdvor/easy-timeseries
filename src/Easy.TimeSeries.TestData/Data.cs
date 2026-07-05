@@ -1,12 +1,34 @@
-namespace Easy.TimeSeries.Tests;
+namespace Easy.TimeSeries.TestData;
 
 using System.Globalization;
 
-internal static class Data
+public static class Data
 {
     private const string DataDirEnvVarName = "TS_TESTS_DATA";
 
     public static readonly Lazy<DirectoryInfo> DataDir = new(FindDataDir);
+
+    private static string FindSolutionDirPath()
+    {
+        var dir = AppContext.BaseDirectory;
+        while (!string.IsNullOrEmpty(dir))
+        {
+            if (IsSolutionDir(dir))
+            {
+                return dir;
+            }
+
+            dir = Path.GetDirectoryName(dir);
+        }
+
+        return string.Empty;
+
+        static bool IsSolutionDir(string dir)
+        {
+            return Directory.EnumerateFiles(dir, "*.sln", SearchOption.TopDirectoryOnly).Any()
+                   || Directory.EnumerateFiles(dir, "*.slnx", SearchOption.TopDirectoryOnly).Any();
+        }
+    }
 
     private static DirectoryInfo FindDataDir()
     {
@@ -16,12 +38,13 @@ internal static class Data
             return new DirectoryInfo(envSet);
         }
 
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        var path = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "data"));
+
+        var solutionDir = FindSolutionDirPath();
+        var path = Path.GetFullPath(Path.Combine(solutionDir, "tests", "data"));
         var dir = new DirectoryInfo(path);
         if (!dir.Exists)
         {
-            throw new Exception("Where is solution/tests/data directory?");
+            throw new InvalidOperationException("Where is solution/tests/data directory?");
         }
 
         return dir;
@@ -32,9 +55,8 @@ internal static class Data
         var result = new List<PowerPlant>(35_000);
         var path = Path.Combine(DataDir.Value.FullName, "power_plants.csv");
         using var reader = new StreamReader(path);
-        string? line;
         var first = true;
-        while ((line = reader.ReadLine()) is not null)
+        while (reader.ReadLine() is { } line)
         {
             if (first)
             {
@@ -43,7 +65,7 @@ internal static class Data
                 continue;
             }
 
-            var parts = line.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length != 5)
             {
                 continue;
@@ -52,7 +74,7 @@ internal static class Data
             var capacity = float.Parse(parts[1], CultureInfo.InvariantCulture);
             var latitude = float.Parse(parts[2], CultureInfo.InvariantCulture);
             var longitude = float.Parse(parts[3], CultureInfo.InvariantCulture);
-            result.Add(new PowerPlant(parts[0], capacity, latitude, longitude, parts[4]));
+            result.Add(new PowerPlant(parts[0].Trim(), capacity, latitude, longitude, parts[4].Trim()));
         }
 
         reader.Close();

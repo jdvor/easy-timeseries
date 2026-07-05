@@ -9,6 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Easy.TimeSeries.TestData\Easy.TimeSeries.TestData.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
   </ItemGroup>
 

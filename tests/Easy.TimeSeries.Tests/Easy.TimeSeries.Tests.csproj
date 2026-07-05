@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Easy.TimeSeries.SrcGen\Easy.TimeSeries.SrcGen.csproj" />
+    <ProjectReference Include="..\..\src\Easy.TimeSeries.TestData\Easy.TimeSeries.TestData.csproj" />
     <ProjectReference Include="..\..\src\Easy.TimeSeries\Easy.TimeSeries.csproj" />
   </ItemGroup>
   

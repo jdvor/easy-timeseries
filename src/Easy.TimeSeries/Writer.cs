@@ -1,6 +1,6 @@
 namespace Easy.TimeSeries;
 
-using Easy.TimeSeries.Storage;
+using Easy.TimeSeries.Abstractions;
 using System.Collections.Immutable;
 
 /// <summary>
@@ -163,6 +163,30 @@ public sealed class Writer : IDisposable
 
         bitWriter.Flush();
         var ci = new ColumnInfo(columns.Count, ColumnValueType.Double, 0, columnLabel);
+        columns.Add((ci, bufferWriter));
+
+        return this;
+    }
+
+    public Writer AddDecimal(IEnumerable<decimal> values, string columnLabel)
+    {
+        var sizeHint = DecimalWriter.GetSizeHint(rows);
+        var (bufferWriter, bitWriter) = CreateWriters(sizeHint);
+        var writer = new DecimalWriter(bitWriter);
+        var i = 0;
+        foreach (var value in values)
+        {
+            if (i >= rows)
+            {
+                break;
+            }
+
+            writer.Write(value);
+            ++i;
+        }
+
+        bitWriter.Flush();
+        var ci = new ColumnInfo(columns.Count, ColumnValueType.Decimal, 0, columnLabel);
         columns.Add((ci, bufferWriter));
 
         return this;

@@ -1,8 +1,9 @@
 namespace Easy.TimeSeries.Storage;
 
+using Easy.TimeSeries.Abstractions;
 using static Easy.TimeSeries.Constants;
 
-internal sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
+public sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
 {
     private readonly PooledArrayBufferWriter buffer =
         new(DefaultInitialBufferSize, DefaultBufferGrowFactor, MaxAllowedBufferSize);

@@ -8,7 +8,6 @@ public sealed class PathBuilder
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
     private readonly string root;
     private readonly TimeGranularity granularity;
-    private readonly string suffix;
     private readonly string dateFmt;
     private readonly Regex rgx;
 
@@ -16,7 +15,6 @@ public sealed class PathBuilder
     {
         this.root = root;
         this.granularity = granularity;
-        this.suffix = suffix;
         dateFmt = GetDateTimeFormatString(granularity);
         var pattern = GetPattern(root, granularity, suffix);
         rgx = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);

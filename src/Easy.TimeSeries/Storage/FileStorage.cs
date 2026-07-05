@@ -1,9 +1,17 @@
 namespace Easy.TimeSeries.Storage;
 
-public sealed class FileStorage(FileInfo file) : IWriteStorage, IReadStorage, IDisposable
+using Easy.TimeSeries.Abstractions;
+
+public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
 {
+    private readonly FileInfo file;
     private FileStream? fileStream;
     private bool disposed;
+
+    public FileStorage(FileInfo file)
+    {
+        this.file = file;
+    }
 
     public FileStorage(string filePath)
         : this(new FileInfo(filePath))
@@ -37,4 +45,6 @@ public sealed class FileStorage(FileInfo file) : IWriteStorage, IReadStorage, ID
         disposed = true;
         fileStream?.Dispose();
     }
+
+    public override string ToString() => file.FullName;
 }
