@@ -50,31 +50,33 @@ public static class Data
         return dir;
     }
 
-    public static List<PowerPlant> GetPowerPlants()
+    private static List<T> ReadDataFile<T>(
+        string fileName,
+        Func<string, T?> lineParser,
+        bool hasHeaders = true,
+        int capacity = 1000)
+        where T : class
     {
-        var result = new List<PowerPlant>(35_000);
-        var path = Path.Combine(DataDir.Value.FullName, "power_plants.csv");
+        var result = new List<T>(capacity);
+        var path = Path.Combine(DataDir.Value.FullName, fileName);
         using var reader = new StreamReader(path);
         var first = true;
         while (reader.ReadLine() is { } line)
         {
-            if (first)
+            if (hasHeaders && first)
             {
                 // headers
                 first = false;
                 continue;
             }
 
-            var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length != 5)
+            var item = lineParser(line);
+            if (item is null)
             {
                 continue;
             }
 
-            var capacity = float.Parse(parts[1], CultureInfo.InvariantCulture);
-            var latitude = float.Parse(parts[2], CultureInfo.InvariantCulture);
-            var longitude = float.Parse(parts[3], CultureInfo.InvariantCulture);
-            result.Add(new PowerPlant(parts[0].Trim(), capacity, latitude, longitude, parts[4].Trim()));
+            result.Add(item);
         }
 
         reader.Close();
@@ -82,9 +84,142 @@ public static class Data
         return result;
     }
 
-    public static long GetPowerPlantsFileSize()
+    private static long GetDataFileSize(string fileName)
     {
-        var path = Path.Combine(DataDir.Value.FullName, "power_plants.csv");
+        var path = Path.Combine(DataDir.Value.FullName, fileName);
         return new FileInfo(path).Length;
     }
+
+    public static List<PowerPlant> GetPowerPlants()
+    {
+        return ReadDataFile(
+            fileName: "power_plants.csv",
+            lineParser: line =>
+            {
+                var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 5)
+                {
+                    return null;
+                }
+
+                var capacity = float.Parse(parts[1], CultureInfo.InvariantCulture);
+                var latitude = float.Parse(parts[2], CultureInfo.InvariantCulture);
+                var longitude = float.Parse(parts[3], CultureInfo.InvariantCulture);
+                return new PowerPlant(parts[0].Trim(), capacity, latitude, longitude, parts[4].Trim());
+            },
+            capacity: 35_000);
+    }
+
+    public static long GetPowerPlantsCsvFileSize() => GetDataFileSize("power_plants.csv");
+
+    public static List<Boeing> GetBoeing()
+    {
+        return ReadDataFile(
+            fileName: "Boeing.csv",
+            lineParser: line =>
+            {
+                var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 9)
+                {
+                    return null;
+                }
+
+                var time = DateTime.ParseExact(parts[8].Trim(), "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+                time = DateTime.SpecifyKind(time, DateTimeKind.Utc);
+
+                return new Boeing
+                {
+                    Year = int.Parse(parts[0], CultureInfo.InvariantCulture),
+                    Month = int.Parse(parts[1], CultureInfo.InvariantCulture),
+                    Day = int.Parse(parts[2], CultureInfo.InvariantCulture),
+                    Hour = int.Parse(parts[3], CultureInfo.InvariantCulture),
+                    Minute = int.Parse(parts[4], CultureInfo.InvariantCulture),
+                    Second = int.Parse(parts[5], CultureInfo.InvariantCulture),
+                    Price = float.Parse(parts[6], CultureInfo.InvariantCulture),
+                    Volume = int.Parse(parts[7], CultureInfo.InvariantCulture),
+                    Time = time,
+                };
+            },
+            capacity: 225_000);
+    }
+
+    public static long GetBoeingCsvFileSize() => GetDataFileSize("Boeing.csv");
+
+    public static List<Macro4> GetMacro4()
+    {
+        return ReadDataFile(
+            fileName: "Macro4Series.csv",
+            lineParser: line =>
+            {
+                var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 4)
+                {
+                    return null;
+                }
+
+                return new Macro4
+                {
+                    rgnp = double.Parse(parts[0], CultureInfo.InvariantCulture),
+                    tb3m = double.Parse(parts[1], CultureInfo.InvariantCulture),
+                    lnm1 = double.Parse(parts[2], CultureInfo.InvariantCulture),
+                    gs10 = double.Parse(parts[3], CultureInfo.InvariantCulture),
+                };
+            },
+            capacity: 215);
+    }
+
+    public static long GetMacro4CsvFileSize() => GetDataFileSize("Macro4Series.csv");
+
+    public static List<Gold> GetGold()
+    {
+        return ReadDataFile(
+            fileName: "Gold.csv",
+            lineParser: line =>
+            {
+                var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 2)
+                {
+                    return null;
+                }
+
+                var date = DateOnly.Parse(parts[0].Trim(), CultureInfo.InvariantCulture);
+
+                return new Gold
+                {
+                    Date = new DateTime(date, TimeOnly.MinValue, DateTimeKind.Utc),
+                    Value = float.Parse(parts[1], CultureInfo.InvariantCulture),
+                };
+            },
+            capacity: 5_528);
+    }
+
+    public static long GetGoldCsvFileSize() => GetDataFileSize("Gold.csv");
+
+    public static List<Vix> GetVix()
+    {
+        return ReadDataFile(
+            fileName: "d-vix0411.csv",
+            lineParser: line =>
+            {
+                var parts = line.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length != 5)
+                {
+                    return null;
+                }
+
+                var date = DateOnly.ParseExact(parts[0].Trim(), "M/d/yyyy", CultureInfo.InvariantCulture);
+
+                return new Vix
+                {
+                    Date = new DateTime(date, TimeOnly.MinValue, DateTimeKind.Utc),
+                    Open = float.Parse(parts[1], CultureInfo.InvariantCulture),
+                    High = float.Parse(parts[2], CultureInfo.InvariantCulture),
+                    Low = float.Parse(parts[3], CultureInfo.InvariantCulture),
+                    Close = float.Parse(parts[4], CultureInfo.InvariantCulture),
+                };
+            },
+            capacity: 1_989);
+    }
+
+    public static long GetVixCsvFileSize() => GetDataFileSize("d-vix0411.csv");
 }
