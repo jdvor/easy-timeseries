@@ -2,5 +2,6 @@
 - [License](docs/license.md)
 - [Solution Overview](docs/solution-overview.md)
 - [Data Layout Details](docs/layout.md)
+- [Source Generation](docs/source-generation.md)
 - [Code Style](docs/code-style.md)
 - [Markdown Examples](docs/markdown-examples.md)

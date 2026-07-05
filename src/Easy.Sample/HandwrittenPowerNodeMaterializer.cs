@@ -2,7 +2,11 @@ namespace Easy.Sample;
 
 using Easy.TimeSeries.Abstractions;
 
-internal sealed class PowerNodeMaterializer : IMaterializer<PowerNode>
+/// <summary>
+/// Handwritten draft kept as a reference implementation for comparison with the source-generated
+/// <c>PowerNodeMaterializer</c>. Not used by the sample.
+/// </summary>
+internal sealed class HandwrittenPowerNodeMaterializer : IMaterializer<PowerNode>
 {
     private PowerNode[]? rows;
     private int currentColumn;
@@ -64,7 +68,7 @@ internal sealed class PowerNodeMaterializer : IMaterializer<PowerNode>
         {
             switch (currentColumn)
             {
-                case 6: // <- column index
+                case 8: // <- column index
                     instance.PowerNodeId = l;
                     break;
             }
@@ -73,7 +77,7 @@ internal sealed class PowerNodeMaterializer : IMaterializer<PowerNode>
         {
             switch (currentColumn)
             {
-                case 8: // <- column index
+                case 6: // <- column index
                     instance.StartDuration = ts;
                     break;
             }
@@ -127,13 +131,13 @@ internal sealed class PowerNodeMaterializer : IMaterializer<PowerNode>
                 rows[i] = new PowerNode();
             }
         }
-        else if (rowCount > rows.Length + 1)
+        else if (rowCount > rows.Length)
         {
             var resizedRows = new PowerNode[rowCount];
             Array.Copy(rows, resizedRows, rows.Length);
             for (var i = rows.Length; i < rowCount; i++)
             {
-                rows[i] = new PowerNode();
+                resizedRows[i] = new PowerNode();
             }
 
             rows = resizedRows;

@@ -27,7 +27,7 @@ public sealed class PowerNode
     [Column(6, Label = "Start Duration")]
     public TimeSpan StartDuration { get; set; }
 
-    [Column(7, Label = "Start Price", NumberPrecision = NumberPrecision.DecimalPlaces2)]
+    [Column(7, Label = "Start Price")]
     public decimal StartPrice { get; set; }
 
     [Column(8, Label = "ID")]

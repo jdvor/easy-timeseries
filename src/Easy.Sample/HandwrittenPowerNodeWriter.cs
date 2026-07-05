@@ -4,12 +4,15 @@ using Easy.TimeSeries;
 using Easy.TimeSeries.Abstractions;
 using TimeSeries.Storage;
 
-public sealed class PowerNodeWriter : IWriter<PowerNode>
+/// <summary>
+/// Handwritten draft kept as a reference implementation for comparison with the source-generated
+/// <c>PowerNodeWriter</c>. Not used by the sample.
+/// </summary>
+public sealed class HandwrittenPowerNodeWriter : IWriter<PowerNode>
 {
     /// <remarks>
     /// The methods of Writer must be called in the exact order of the column index defined in the ColumnAttribute.
     /// Also, such column indexes must start from 0 and be continuous.
-    /// It is probable that the ColumnAttribute will need to be further extended to support more options (like time precision).
     /// If the Label is not provided in the attribute, the property name will be used as column name.
     /// </remarks>
     public async Task WriteAsync(
