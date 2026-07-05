@@ -46,22 +46,24 @@ Value-type byte values (`ColumnValueType`):
 | Byte | Name             |
 | ---- | ---------------- |
 | 0    | `None`           |
-| 1    | `DateTime`       |
+| 1    | `DateTimeOrdered` |
 | 2    | `TimeSpan`       |
 | 3    | `Float`          |
 | 4    | `Double`         |
-| 5    | `Int32`          |
-| 6    | `Int64`          |
-| 7    | `Bool`           |
-| 8    | `ScaledNumber32` |
-| 9    | `ScaledNumber64` |
-| 10   | `Category`       |
+| 5    | `Decimal`        |
+| 6    | `Int32`          |
+| 7    | `Int64`          |
+| 8    | `Bool`           |
+| 9    | `ScaledNumber32` |
+| 10   | `ScaledNumber64` |
+| 11   | `Category`       |
+| 12   | `DateTimeUnordered` |
 
 ### Meta field semantics
 
 | Value type             | `Meta` interpretation                                                                                |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `DateTime`, `TimeSpan` | `TimePrecision` enum value (`Milliseconds=0`, `TenthsOfSecond=1`, `Seconds=2`, `Days=3`, `Years=4`). |
+| `DateTimeOrdered`, `DateTimeUnordered`, `TimeSpan` | `TimePrecision` enum value (`Milliseconds=0`, `TenthsOfSecond=1`, `Seconds=2`, `Days=3`, `Years=4`). |
 | `ScaledNumber32`/`64`  | `decimalPlaces` (1-8). The reader recovers `scale = 10^decimalPlaces`. **Not the scale itself.**     |
 | All others             | Unused, written as `0`.                                                                              |
 
@@ -125,6 +127,30 @@ Stored as `BitConverter.SingleToInt32Bits(value)` through an `Int32Writer`. No a
 
 Stored as `BitConverter.DoubleToInt64Bits(value)` through an `Int64Writer`. No additional metadata. `Meta = 0`.
 
+### `Decimal` (two interleaved XOR streams)
+
+Implementation: `DecimalWriter` / `DecimalReader`, sharing the XOR + block state machine (`Xor64Writer` / `Xor64Reader`)
+with `Int64Writer` / `Int64Reader`. `Meta = 0`.
+
+A `decimal` is 128 bits: a 96-bit unsigned mantissa (`lo`/`mid`/`hi` 32-bit parts from `decimal.GetBits`), a sign bit,
+and a scale 0-28. Each value is split into two 64-bit logical words:
+
+| Word       | Content (LSB first)                                                       |
+| ---------- | ------------------------------------------------------------------------- |
+| `mantissa` | bits 0-63 of the mantissa (`lo \| mid << 32`)                             |
+| `meta`     | bits 0-31: `hi`; bits 32-39: scale; bit 40: sign (1 = negative); rest 0   |
+
+Per record the writer emits one `Int64`-style XOR + block frame for `mantissa`, then one for `meta`, in that order,
+committed as a single logical entry. Each stream keeps its own XOR state (previous value and previous block); they only
+share the bit sequence. The first record therefore costs 128 raw bits.
+
+For typical columns (constant number of decimal places, absolute values below `~1.8e19`) the `meta` word never changes,
+so it costs a single `0` bit per record after the first - the column compresses like an `Int64` column plus one bit per
+record.
+
+The round-trip is exact, including non-canonical scale: `1.0m` and `1.00m` have different representations (scale 1 vs 2)
+and are preserved as written.
+
 ### `ScaledNumber32`
 
 `v = (int)Math.Round(value * scale)` where `scale = 10^decimalPlaces`. Then stored through an `Int32Writer`. `Meta = decimalPlaces` (1-8). The reader recovers `value = ((float)((double)v / scale))`. Use this when input is `float` but its meaningful precision is a small, fixed number of decimal places - it compresses dramatically better than raw `Float`.
@@ -141,9 +167,9 @@ Same as `ScaledNumber32` with `long` and `Int64Writer`. `Meta = decimalPlaces` (
 
 One bit per value, packed low-to-high inside each 64-bit word. No control bits, no compression. `BoolReader` reads exactly `ColumnHeader.Records` bits. `Meta = 0`.
 
-### `DateTime` (delta-of-delta)
+### `DateTimeOrdered` (delta-of-delta)
 
-Implementation: `DateTimeWriter` / `DateTimeReader`. `Meta` is the `TimePrecision`.
+Implementation: `DateTimeOrderedWriter` / `DateTimeOrderedReader`. `Meta` is the `TimePrecision`.
 
 Every input must be UTC and monotonically non-decreasing (the writer throws otherwise). The timestamp is normalized to `(dt.Ticks - Epoch.Ticks) / precisionDivisor` where `Epoch = 2000-01-01T00:00:00Z`. At millisecond precision this stays within 41 bits until `2069-09-06T15:47:35.551Z` (`Constants.TimeStamp.MaxBits = 41`).
 
@@ -165,6 +191,20 @@ Bucket table (from `Constants.TimeStamp`):
 | `11`            | 32           | otherwise (32-bit signed) |
 
 The bias added before writing equals the bucket's `2^(bits-1)` (so the on-disk value is unsigned). The reader subtracts the same bias.
+
+### `DateTimeUnordered` (absolute timestamp, XOR)
+
+Implementation: `DateTimeUnorderedWriter` / `DateTimeUnorderedReader`. `Meta` is the `TimePrecision`.
+
+For `DateTime` columns whose values are **not** sorted. Every input must be UTC, but there is no ordering constraint:
+values may appear in any order, repeat, or even precede the epoch (the timestamp is then negative). The timestamp is
+normalized exactly as for `DateTimeOrdered` - `(dt.Ticks - Epoch.Ticks) / precisionDivisor` - but stored as a full 64-bit
+value through the same XOR + block state machine used by `Int64` (`Xor64Writer`/`Xor64Reader`), so neither the 41-bit
+ceiling nor the monotonicity requirement of the delta-of-delta encoding applies.
+
+Prefer `DateTimeOrdered` when the column is monotonically non-decreasing - delta-of-delta compresses it
+considerably better. `DateTimeUnordered` costs at worst ~66 bits per value (vs. 64 raw), and much less when
+neighboring values share high bits, which is typical for event times clustered in a window.
 
 ### `Category` (dictionary, variable-width id)
 
@@ -202,7 +242,7 @@ Suppose `Writer.AddInt32([42], "x").WriteToAsync(...)`. The resulting bytes are:
 | 0      | `02 FD`                   | Magic.                                                        |
 | 2      | `01`                      | Version V1.                                                   |
 | 3      | `01`                      | One column.                                                   |
-| 4      | `05`                      | ColumnValueType.Int32.                                        |
+| 4      | `06`                      | ColumnValueType.Int32.                                        |
 | 5      | `00 00 00 00`             | Meta = 0.                                                     |
 | 9      | `01`                      | Label length = 1.                                             |
 | 10     | `78`                      | Label `"x"`.                                                  |
@@ -221,5 +261,8 @@ Total: 28 bytes. (Adjust the label and meta bytes for other columns.)
 - For `Category`, the map size lives in the first 2 bytes of the map area (`uint16`). `Header.ReadLayout` and `CategoryReader.ReadCategoryMap` both rely on this to advance past the column.
 - For `ScaledNumber*`, `ColumnInfo.Meta` is `decimalPlaces`, not `scale`. Both the writer and the reader must compute `scale = 10^decimalPlaces`.
 - `ScaledNumber32` uses `int` and `Math.Round`; the absolute value of `value * 10^decimalPlaces` must fit in `int.MaxValue` (`~2.1e9`). Use `ScaledNumber64` if it does not.
-- `DateTime` requires `DateTimeKind.Utc` and monotonically non-decreasing timestamps. The 41-bit ceiling at millisecond precision is `Epoch + 2^41 - 1` ms ≈ `2069-09-06T15:47:35.551Z`.
-- The current `DateTime` writer (delta-of-delta) is for time-series-ordered columns only. DTO collections that happen to carry arbitrary `DateTime` properties (e.g. a birth date) violate the monotonic-UTC constraint and will throw at write time. The planned fix is an absolute-timestamp writer that routes `dt.Ticks - epoch` through `Int64Writer` (still XOR+block compressed, worst case ~65 bits/value vs. 64 raw); selection between the two writers will be codified by the source generator via a new `ColumnAttribute` field (e.g. `DateTimeMode` or `Ordered`).
+- `DateTimeOrdered` requires `DateTimeKind.Utc` and monotonically non-decreasing timestamps. The 41-bit ceiling at millisecond precision is `Epoch + 2^41 - 1` ms ≈ `2069-09-06T15:47:35.551Z`.
+- The `DateTimeOrdered` writer (delta-of-delta) is for time-series-ordered columns only. DTO collections that happen to carry
+  arbitrary `DateTime` properties (e.g. a birth date) violate the monotonic-UTC constraint and will throw at write
+  time - use `DateTimeUnordered` (`Writer.AddTimeUnordered`) for those. Selection between the two writers will be
+  codified by the source generator via `ColumnAttribute.DateTimeSort`.

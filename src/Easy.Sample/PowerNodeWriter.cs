@@ -39,8 +39,8 @@ public sealed class PowerNodeWriter : IWriter<PowerNode>
             .AddInterval(startDurations, "Start Duration", TimePrecision.Seconds)
             .AddDecimal(startPrices, "Start Price")
             .AddInt64(ids, "ID")
-            .AddTime(measurementTimes, "Measurement Time", TimePrecision.Milliseconds)
-            .AddTime(certifiedTimes, "Certified Time", TimePrecision.Days);
+            .AddTimeOrdered(measurementTimes, "Measurement Time", TimePrecision.Milliseconds)
+            .AddTimeUnordered(certifiedTimes, "Certified Time", TimePrecision.Days);
 
         await writer.WriteToAsync(storage, cancellationToken).ConfigureAwait(false);
     }

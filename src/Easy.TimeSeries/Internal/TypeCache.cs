@@ -63,16 +63,18 @@ internal static class TypeCache
     {
         return attrType switch
         {
-            DataValueType.DateTime => (ColumnValueType.DateTime, IsNullable(propType)),
+            DataValueType.DateTimeOrdered => (ColumnValueType.DateTimeOrdered, IsNullable(propType)),
             DataValueType.TimeSpan => (ColumnValueType.TimeSpan, IsNullable(propType)),
             DataValueType.Float => (ColumnValueType.Float, IsNullable(propType)),
             DataValueType.Double => (ColumnValueType.Double, IsNullable(propType)),
+            DataValueType.Decimal => (ColumnValueType.Decimal, IsNullable(propType)),
             DataValueType.Int32 => (ColumnValueType.Int32, IsNullable(propType)),
             DataValueType.Int64 => (ColumnValueType.Int64, IsNullable(propType)),
             DataValueType.Bool => (ColumnValueType.Bool, IsNullable(propType)),
             DataValueType.ScaledNumber32 => (ColumnValueType.ScaledNumber32, IsNullable(propType)),
             DataValueType.ScaledNumber64 => (ColumnValueType.ScaledNumber64, IsNullable(propType)),
             DataValueType.Category => (ColumnValueType.Category, IsNullable(propType)),
+            DataValueType.DateTimeUnordered => (ColumnValueType.DateTimeUnordered, IsNullable(propType)),
             _ => From(propType),
         };
 
@@ -105,7 +107,7 @@ internal static class TypeCache
 
             if (type == typeof(decimal) || type == typeof(decimal?))
             {
-                return (ColumnValueType.ScaledNumber64, IsNullable(type));
+                return (ColumnValueType.Decimal, IsNullable(type));
             }
 
             if (type == typeof(bool) || type == typeof(bool?))
@@ -115,7 +117,7 @@ internal static class TypeCache
 
             if (type == typeof(DateTime) || type == typeof(DateTime?))
             {
-                return (ColumnValueType.DateTime, IsNullable(type));
+                return (ColumnValueType.DateTimeOrdered, IsNullable(type));
             }
 
             if (type == typeof(TimeSpan) || type == typeof(TimeSpan?))

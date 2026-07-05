@@ -29,8 +29,8 @@ public static class Reader
             var columnSpan = buffer.Slice(start, length);
             switch (info.ValueType)
             {
-                case ColumnValueType.DateTime:
-                    ColumnDateTime(columnSpan, info, materializer, options);
+                case ColumnValueType.DateTimeOrdered:
+                    ColumnDateTimeOrdered(columnSpan, info, materializer, options);
                     break;
 
                 case ColumnValueType.TimeSpan:
@@ -43,6 +43,10 @@ public static class Reader
 
                 case ColumnValueType.Double:
                     ColumnDouble(columnSpan, info, materializer, options);
+                    break;
+
+                case ColumnValueType.Decimal:
+                    ColumnDecimal(columnSpan, info, materializer, options);
                     break;
 
                 case ColumnValueType.Int32:
@@ -69,6 +73,10 @@ public static class Reader
                     ColumnCategory(columnSpan, info, materializer, options);
                     break;
 
+                case ColumnValueType.DateTimeUnordered:
+                    ColumnDateTimeUnordered(columnSpan, info, materializer, options);
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -78,14 +86,38 @@ public static class Reader
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void ColumnDateTime<T>(
+    private static void ColumnDateTimeOrdered<T>(
         ReadOnlySpan<byte> columnSpan,
         ColumnInfo info,
         IMaterializer<T> materializer,
         ReadOptions options)
         where T : class, new()
     {
-        var reader = new DateTimeReader(columnSpan, (TimePrecision)info.Meta);
+        var reader = new DateTimeOrderedReader(columnSpan, (TimePrecision)info.Meta);
+        var count = reader.ColumnHeader.Records;
+        var bindingExists = materializer.BeginColumn(info.Index, count);
+        if (bindingExists)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                materializer.Hydrate(reader.Read());
+            }
+        }
+        else if (!options.IgnoreUnknownColumnIndexes)
+        {
+            throw TimeSeriesException.UnmappedColumnIndex(info.Index, typeof(T));
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnDateTimeUnordered<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+    {
+        var reader = new DateTimeUnorderedReader(columnSpan, (TimePrecision)info.Meta);
         var count = reader.ColumnHeader.Records;
         var bindingExists = materializer.BeginColumn(info.Index, count);
         if (bindingExists)
@@ -158,6 +190,30 @@ public static class Reader
         where T : class, new()
     {
         var reader = new DoubleReader(columnSpan);
+        var count = reader.ColumnHeader.Records;
+        var bindingExists = materializer.BeginColumn(info.Index, count);
+        if (bindingExists)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                materializer.Hydrate(reader.Read());
+            }
+        }
+        else if (!options.IgnoreUnknownColumnIndexes)
+        {
+            throw TimeSeriesException.UnmappedColumnIndex(info.Index, typeof(T));
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnDecimal<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+    {
+        var reader = new DecimalReader(columnSpan);
         var count = reader.ColumnHeader.Records;
         var bindingExists = materializer.BeginColumn(info.Index, count);
         if (bindingExists)

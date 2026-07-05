@@ -21,7 +21,7 @@ internal static class HeaderSamples
             Version.V1,
             ImmutableArray.Create(new[]
             {
-                new ColumnInfo(0, ColumnValueType.DateTime, (int)TimePrecision.Seconds, "time"),
+                new ColumnInfo(0, ColumnValueType.DateTimeOrdered, (int)TimePrecision.Seconds, "time"),
             }));
     }
 

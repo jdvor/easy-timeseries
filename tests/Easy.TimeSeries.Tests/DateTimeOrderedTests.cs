@@ -2,7 +2,7 @@ namespace Easy.TimeSeries.Tests;
 
 using System.Collections.Immutable;
 
-public class DateTimeTests
+public class DateTimeOrderedTests
 {
     [Theory]
     [InlineData(TimePrecision.Milliseconds)]
@@ -13,7 +13,7 @@ public class DateTimeTests
         var testData = PredefinedData1();
         var (bp, bw) = BufferUtil.CreateBitWriter(GetSizeHint(testData));
 
-        var writer = new DateTimeWriter(bw, precision);
+        var writer = new DateTimeOrderedWriter(bw, precision);
         foreach (var time in testData)
         {
             writer.Write(time);
@@ -22,7 +22,7 @@ public class DateTimeTests
         bw.Flush();
         var buffer = bp.WrittenSpan;
 
-        var reader = new DateTimeReader(buffer, precision);
+        var reader = new DateTimeOrderedReader(buffer, precision);
         foreach (var expected in testData)
         {
             var actual = reader.Read();
@@ -40,7 +40,7 @@ public class DateTimeTests
         var testData = PredefinedData1();
         var (bp, bw) = BufferUtil.CreateBitWriter(GetSizeHint(testData));
 
-        var writer = new DateTimeWriter(bw, precision);
+        var writer = new DateTimeOrderedWriter(bw, precision);
         foreach (var time in testData)
         {
             writer.Write(time);

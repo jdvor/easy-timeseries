@@ -47,7 +47,7 @@ This doc is not a substitute for the `.editorconfig`, `src/BannedSymbols.txt`, o
 ## Type design
 
 - `sealed` by default for implementation classes. Open for extension only if the public API actually requires it. Existing code uses `sealed class` or `ref struct` for almost every implementation type.
-- `internal ref struct` is the default shape for **readers** (see `Int32Reader`, `BitReader`, `DateTimeReader`, ...). They are stack-only, hold a `ReadOnlySpan<byte>` directly, and pay no allocation cost per column.
+- `internal ref struct` is the default shape for **readers** (see `Int32Reader`, `BitReader`, `DateTimeOrderedReader`, ...). They are stack-only, hold a `ReadOnlySpan<byte>` directly, and pay no allocation cost per column.
 - `internal sealed class` is the default shape for **writers** (see `Int32Writer`, `BitWriter`, ...). They are heap-allocated once per column and reused across many values, so the cost is amortized.
 - Use `readonly record struct` for small value-like types that participate in equality/`ToString` for free (`ColumnInfo`, `Column`, `Header`).
 - Use `public enum X : byte` for enums that are written to disk - the byte width is part of the on-disk format.
