@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Easy.TimeSeries.SrcGen\Easy.TimeSeries.SrcGen.csproj" />
+    <ProjectReference Include="..\..\src\Easy.TimeSeries.Abstractions\Easy.TimeSeries.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+  </ItemGroup>
+
+</Project>

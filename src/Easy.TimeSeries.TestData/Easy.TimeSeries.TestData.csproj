@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Easy.TimeSeries.Abstractions\Easy.TimeSeries.Abstractions.csproj" />
-    <ProjectReference Include="..\Easy.TimeSeries.SrcGen\Easy.TimeSeries.SrcGen.csproj" 
+    <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+    <ProjectReference Include="..\Easy.TimeSeries.SrcGen\Easy.TimeSeries.SrcGen.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
