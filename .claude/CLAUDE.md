@@ -30,7 +30,7 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.Parquet`      | skeleton    | Empty. Future conversion to/from Apache Parquet (`Parquet.Net` package referenced centrally).                              |
 | `src/Easy.TimeSeries.CmdLine`      | scaffolding | Debugging/conversion CLI built on `Cocona.Lite`. Sandbox-quality.                                                          |
 | `src/Easy.TimeSeries.Benchmarks`   | sandbox     | `BenchmarkDotNet` harness; rough benchmarks for buffer sizing etc. Treat as scratch space until critical paths are pinned. |
-| `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO); handwritten `Handwritten*` counterparts kept as reference. |
+| `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |
 | `tests/Easy.TimeSeries.Tests`      | implemented | xUnit v3 tests for the core library. Good coverage for bit-level writers/readers and the DTO round-trip.                   |
 | `tests/Easy.TimeSeries.SrcGen.Tests` | implemented | `CSharpGeneratorDriver`-based tests for the generator: generated-code shape, ETS diagnostics, incrementality.            |
 
