@@ -8,7 +8,7 @@ public static class Data
 
     public static readonly Lazy<DirectoryInfo> DataDir = new(FindDataDir);
 
-    private static string FindSolutionDirPath()
+    public static string FindSolutionDirPath()
     {
         var dir = AppContext.BaseDirectory;
         while (!string.IsNullOrEmpty(dir))

@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Cocona.Lite" />
+    <PackageReference Include="Parquet.Net" />
   </ItemGroup>
 
   <ItemGroup>
