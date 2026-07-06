@@ -16,6 +16,7 @@ internal static class Parser
     private const int DefaultDateTimePrecision = 0; // Milliseconds
     private const int DefaultTimeSpanPrecision = 2; // Seconds
     private const int DateTimeSortAscending = 1;
+    private const int NumberDistributionRandom = 1;
 
     public static TargetTypeModel Parse(GeneratorAttributeSyntaxContext ctx, GenerationKind kind, CancellationToken ct)
     {
@@ -239,6 +240,10 @@ internal static class Parser
             {
                 ColumnKind.Float when args.NumberPrecision > 0 => ColumnKind.ScaledNumber32,
                 ColumnKind.Double when args.NumberPrecision > 0 => ColumnKind.ScaledNumber64,
+                ColumnKind.Float when args.NumberDistribution == NumberDistributionRandom => ColumnKind.FloatRaw,
+                ColumnKind.Double when args.NumberDistribution == NumberDistributionRandom => ColumnKind.DoubleRaw,
+                ColumnKind.Int64 when args.NumberDistribution == NumberDistributionRandom => ColumnKind.Int64Raw,
+                ColumnKind.Int32 when args.NumberDistribution == NumberDistributionRandom => ColumnKind.Int32Raw,
                 ColumnKind.DateTimeOrdered when args.DateTimeSort != DateTimeSortAscending => ColumnKind.DateTimeUnordered,
                 _ => clrKind,
             };
@@ -266,6 +271,10 @@ internal static class Parser
             ColumnKind.Bool => clrKind == ColumnKind.Bool,
             ColumnKind.DateTimeOrdered or ColumnKind.DateTimeUnordered => clrKind == ColumnKind.DateTimeOrdered,
             ColumnKind.TimeSpan => clrKind == ColumnKind.TimeSpan,
+            ColumnKind.FloatRaw => clrKind == ColumnKind.Float,
+            ColumnKind.DoubleRaw => clrKind == ColumnKind.Double,
+            ColumnKind.Int64Raw => clrKind == ColumnKind.Int64,
+            ColumnKind.Int32Raw => clrKind == ColumnKind.Int32,
             _ => false,
         };
 
@@ -300,6 +309,12 @@ internal static class Parser
         if (args.HasNumberPrecision && columnKind is not (ColumnKind.ScaledNumber32 or ColumnKind.ScaledNumber64))
         {
             Ignored(KnownNames.ColumnArgs.NumberPrecision);
+        }
+
+        if (args.HasNumberDistribution
+            && columnKind is not (ColumnKind.FloatRaw or ColumnKind.DoubleRaw or ColumnKind.Int64Raw or ColumnKind.Int32Raw))
+        {
+            Ignored(KnownNames.ColumnArgs.NumberDistribution);
         }
     }
 
@@ -393,6 +408,8 @@ internal static class Parser
 
         public int NumberPrecision { get; private init; }
 
+        public int NumberDistribution { get; private init; }
+
         public bool HasDateTimePrecision { get; private init; }
 
         public bool HasDateTimeSort { get; private init; }
@@ -400,6 +417,8 @@ internal static class Parser
         public bool HasTimeSpanPrecision { get; private init; }
 
         public bool HasNumberPrecision { get; private init; }
+
+        public bool HasNumberDistribution { get; private init; }
 
         public static ColumnArgs From(AttributeData attribute)
         {
@@ -424,6 +443,8 @@ internal static class Parser
                         => args with { TimeSpanPrecision = v, HasTimeSpanPrecision = true },
                     KnownNames.ColumnArgs.NumberPrecision when value is int v
                         => args with { NumberPrecision = v, HasNumberPrecision = true },
+                    KnownNames.ColumnArgs.NumberDistribution when value is int v
+                        => args with { NumberDistribution = v, HasNumberDistribution = true },
                     _ => args,
                 };
             }

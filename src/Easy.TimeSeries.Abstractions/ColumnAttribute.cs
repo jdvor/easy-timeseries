@@ -17,6 +17,8 @@ public class ColumnAttribute : Attribute
 
     public NumberPrecision NumberPrecision { get; set; } = NumberPrecision.Auto;
 
+    public NumberDistribution NumberDistribution { get; set; } = NumberDistribution.Continuous;
+
     public ColumnAttribute(int index)
     {
         Index = index;

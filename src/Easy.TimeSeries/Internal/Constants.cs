@@ -10,6 +10,15 @@ internal static class Constants
     public const int MaxAllowedBufferSize = int.MaxValue; // 2GB
     public const int BlockSizeAdjustment = 1;
 
+    /// <summary>Brotli parameters for the raw ("random") numeric column encoders.</summary>
+    public static class Brotli
+    {
+        // Quality 9 trades a little ratio for markedly faster writes vs. the maximum (11); window 22
+        // (4 MB) is the Brotli default and comfortably spans a single column's raw byte payload.
+        public const int Quality = 9;
+        public const int Window = 22;
+    }
+
     public static class Size32
     {
         public const int MaxBits = 32;

@@ -18,4 +18,16 @@ public enum ColumnValueType : byte
     ScaledNumber64 = 10,
     Category = 11,
     DateTimeUnordered = 12,
+
+    /// <summary>Raw little-endian <see cref="float"/> values, Brotli-compressed. For uncorrelated data.</summary>
+    FloatRaw = 13,
+
+    /// <summary>Raw little-endian <see cref="double"/> values, Brotli-compressed. For uncorrelated data.</summary>
+    DoubleRaw = 14,
+
+    /// <summary>Raw little-endian <see cref="long"/> values, Brotli-compressed. For uncorrelated data.</summary>
+    Int64Raw = 15,
+
+    /// <summary>Raw little-endian <see cref="int"/> values, Brotli-compressed. For uncorrelated data.</summary>
+    Int32Raw = 16,
 }

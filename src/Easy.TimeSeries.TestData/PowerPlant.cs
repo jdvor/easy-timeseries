@@ -22,13 +22,13 @@ public sealed class PowerPlant
     [Column(0, Label = "country")]
     public string CountryCode { get; set; } = string.Empty;
 
-    [Column(1, Label = "capacity_mw")]
+    [Column(1, Label = "capacity_mw", NumberDistribution = NumberDistribution.Random)]
     public float CapacityMw { get; set; }
 
-    [Column(2, Label = "latitude")]
+    [Column(2, Label = "latitude", NumberDistribution = NumberDistribution.Random)]
     public float Latitude { get; set; }
 
-    [Column(3, Label = "longitude")]
+    [Column(3, Label = "longitude", NumberDistribution = NumberDistribution.Random)]
     public float Longitude { get; set; }
 
     [Column(4, Label = "primary_fuel")]

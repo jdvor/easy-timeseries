@@ -1,7 +1,9 @@
 namespace Easy.TimeSeries;
 
 using Easy.TimeSeries.Abstractions;
+using System.Buffers;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 /// <summary>
 /// A builder for time series data, which accumulates data in memory by receiving series of values representing columns
@@ -151,6 +153,50 @@ public sealed class Writer : IDisposable
         var ci = new ColumnInfo(columns.Count, ColumnValueType.Float, 0, columnLabel);
         columns.Add((ci, bufferWriter));
 
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a <see cref="float"/> column whose values are uncorrelated between rows (e.g. geographic
+    /// coordinates). Values are stored raw and Brotli-compressed instead of XOR/delta encoded - prefer
+    /// <see cref="AddFloat"/> for slowly-varying signals, where XOR/delta compresses far better.
+    /// </summary>
+    public Writer AddFloatRandom(IEnumerable<float> values, string columnLabel)
+    {
+        AddRawColumn(values, columnLabel, ColumnValueType.FloatRaw);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a <see cref="double"/> column whose values are uncorrelated between rows. Values are stored raw
+    /// and Brotli-compressed instead of XOR/delta encoded - prefer <see cref="AddDouble"/> for
+    /// slowly-varying signals.
+    /// </summary>
+    public Writer AddDoubleRandom(IEnumerable<double> values, string columnLabel)
+    {
+        AddRawColumn(values, columnLabel, ColumnValueType.DoubleRaw);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a <see cref="long"/> column whose values are uncorrelated between rows. Values are stored raw
+    /// and Brotli-compressed instead of XOR/delta encoded - prefer <see cref="AddInt64"/> for
+    /// slowly-varying signals.
+    /// </summary>
+    public Writer AddInt64Random(IEnumerable<long> values, string columnLabel)
+    {
+        AddRawColumn(values, columnLabel, ColumnValueType.Int64Raw);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an <see cref="int"/> column whose values are uncorrelated between rows. Values are stored raw
+    /// and Brotli-compressed instead of XOR/delta encoded - prefer <see cref="AddInt32"/> for
+    /// slowly-varying signals.
+    /// </summary>
+    public Writer AddInt32Random(IEnumerable<int> values, string columnLabel)
+    {
+        AddRawColumn(values, columnLabel, ColumnValueType.Int32Raw);
         return this;
     }
 
@@ -378,6 +424,35 @@ public sealed class Writer : IDisposable
         var written = storageHeader.WriteTo(buffer);
         var memory = new ReadOnlyMemory<byte>(buffer)[..written];
         return storage.WriteAsync(memory, cancellationToken);
+    }
+
+    private void AddRawColumn<T>(IEnumerable<T> values, string columnLabel, ColumnValueType valueType)
+        where T : struct
+    {
+        var pool = ArrayPool<T>.Shared;
+        var array = pool.Rent(rows);
+        try
+        {
+            var count = 0;
+            foreach (var value in values)
+            {
+                if (count >= rows)
+                {
+                    break;
+                }
+
+                array[count++] = value;
+            }
+
+            var src = MemoryMarshal.AsBytes(array.AsSpan(0, count));
+            var bufferWriter = Util.BrotliCompress(src, count, BufferGrowFactor, MaxAllowedBufferSize);
+            var ci = new ColumnInfo(columns.Count, valueType, 0, columnLabel);
+            columns.Add((ci, bufferWriter));
+        }
+        finally
+        {
+            pool.Return(array);
+        }
     }
 
     private (PooledArrayBufferWriter bufferWriter, BitWriter bitWriter) CreateWriters(int sizeHint)

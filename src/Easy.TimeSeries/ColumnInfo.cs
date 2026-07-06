@@ -56,6 +56,10 @@ public readonly record struct ColumnInfo
             ColumnValueType.ScaledNumber64 => nameof(ColumnValueType.ScaledNumber64),
             ColumnValueType.Category => nameof(ColumnValueType.Category),
             ColumnValueType.DateTimeUnordered => nameof(ColumnValueType.DateTimeUnordered),
+            ColumnValueType.FloatRaw => nameof(ColumnValueType.FloatRaw),
+            ColumnValueType.DoubleRaw => nameof(ColumnValueType.DoubleRaw),
+            ColumnValueType.Int64Raw => nameof(ColumnValueType.Int64Raw),
+            ColumnValueType.Int32Raw => nameof(ColumnValueType.Int32Raw),
             _ => "?",
         };
         return string.IsNullOrEmpty(Label)

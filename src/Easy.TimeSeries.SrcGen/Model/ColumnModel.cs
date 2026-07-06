@@ -26,6 +26,10 @@ internal enum ColumnKind
     ScaledNumber64 = 10,
     Category = 11,
     DateTimeUnordered = 12,
+    FloatRaw = 13,
+    DoubleRaw = 14,
+    Int64Raw = 15,
+    Int32Raw = 16,
 }
 
 /// <summary>
