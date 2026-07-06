@@ -25,5 +25,6 @@ internal static class KnownNames
         public const string DateTimeSort = "DateTimeSort";
         public const string TimeSpanPrecision = "TimeSpanPrecision";
         public const string NumberPrecision = "NumberPrecision";
+        public const string NumberDistribution = "NumberDistribution";
     }
 }

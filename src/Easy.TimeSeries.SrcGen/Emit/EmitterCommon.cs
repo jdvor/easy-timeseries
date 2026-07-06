@@ -43,10 +43,10 @@ internal static class EmitterCommon
         => kind switch
         {
             ColumnKind.Category => "string",
-            ColumnKind.Int32 => "int",
-            ColumnKind.Int64 => "long",
-            ColumnKind.Float or ColumnKind.ScaledNumber32 => "float",
-            ColumnKind.Double or ColumnKind.ScaledNumber64 => "double",
+            ColumnKind.Int32 or ColumnKind.Int32Raw => "int",
+            ColumnKind.Float or ColumnKind.ScaledNumber32 or ColumnKind.FloatRaw => "float",
+            ColumnKind.Double or ColumnKind.ScaledNumber64 or ColumnKind.DoubleRaw => "double",
+            ColumnKind.Int64 or ColumnKind.Int64Raw => "long",
             ColumnKind.Decimal => "decimal",
             ColumnKind.Bool => "bool",
             ColumnKind.DateTimeOrdered or ColumnKind.DateTimeUnordered => "global::System.DateTime",

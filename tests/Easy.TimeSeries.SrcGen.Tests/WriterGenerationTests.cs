@@ -48,6 +48,33 @@ public class WriterGenerationTests
     }
 
     [Fact]
+    public void Writer_maps_random_distribution_to_raw_encoders()
+    {
+        var run = GeneratorTestHelper.Run(
+            TestSources.Dto("""
+                [Column(0, NumberDistribution = NumberDistribution.Random)]
+                public float Latitude { get; set; }
+
+                [Column(1, NumberDistribution = NumberDistribution.Random)]
+                public double Longitude { get; set; }
+
+                [Column(2, NumberDistribution = NumberDistribution.Random)]
+                public long Identifier { get; set; }
+
+                [Column(3, NumberDistribution = NumberDistribution.Random)]
+                public int Bucket { get; set; }
+            """),
+            ct: TestContext.Current.CancellationToken);
+        var source = run.GeneratedSource("DtoWriter.g.cs");
+
+        Assert.Empty(run.GeneratorDiagnostics);
+        Assert.Contains("""writer.AddFloatRandom(new global::System.ArraySegment<float>(c0, 0, rows), "Latitude");""", source);
+        Assert.Contains("""writer.AddDoubleRandom(new global::System.ArraySegment<double>(c1, 0, rows), "Longitude");""", source);
+        Assert.Contains("""writer.AddInt64Random(new global::System.ArraySegment<long>(c2, 0, rows), "Identifier");""", source);
+        Assert.Contains("""writer.AddInt32Random(new global::System.ArraySegment<int>(c3, 0, rows), "Bucket");""", source);
+    }
+
+    [Fact]
     public void Label_falls_back_to_property_name()
     {
         var run = GeneratorTestHelper.Run(

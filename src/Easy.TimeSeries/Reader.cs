@@ -1,6 +1,7 @@
 namespace Easy.TimeSeries;
 
 using Easy.TimeSeries.Abstractions;
+using System.Buffers;
 using System.Runtime.CompilerServices;
 
 public static class Reader
@@ -75,6 +76,22 @@ public static class Reader
 
                 case ColumnValueType.DateTimeUnordered:
                     ColumnDateTimeUnordered(columnSpan, info, materializer, options);
+                    break;
+
+                case ColumnValueType.FloatRaw:
+                    ColumnFloatRaw(columnSpan, info, materializer, options);
+                    break;
+
+                case ColumnValueType.DoubleRaw:
+                    ColumnDoubleRaw(columnSpan, info, materializer, options);
+                    break;
+
+                case ColumnValueType.Int64Raw:
+                    ColumnInt64Raw(columnSpan, info, materializer, options);
+                    break;
+
+                case ColumnValueType.Int32Raw:
+                    ColumnInt32Raw(columnSpan, info, materializer, options);
                     break;
 
                 default:
@@ -372,6 +389,85 @@ public static class Reader
         else if (!options.IgnoreUnknownColumnIndexes)
         {
             throw TimeSeriesException.UnmappedColumnIndex(info.Index, typeof(T));
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnFloatRaw<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+        => ColumnRaw<T, float>(columnSpan, info, materializer, options);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnDoubleRaw<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+        => ColumnRaw<T, double>(columnSpan, info, materializer, options);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnInt64Raw<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+        => ColumnRaw<T, long>(columnSpan, info, materializer, options);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ColumnInt32Raw<T>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+        => ColumnRaw<T, int>(columnSpan, info, materializer, options);
+
+    private static void ColumnRaw<T, TValue>(
+        ReadOnlySpan<byte> columnSpan,
+        ColumnInfo info,
+        IMaterializer<T> materializer,
+        ReadOptions options)
+        where T : class, new()
+        where TValue : struct
+    {
+        if (!ColumnHeader.TryReadFrom(columnSpan, out var header))
+        {
+            throw new ArgumentException("Buffer contains invalid column header.", nameof(columnSpan));
+        }
+
+        var count = header.Records;
+        var bindingExists = materializer.BeginColumn(info.Index, count);
+        if (!bindingExists)
+        {
+            if (!options.IgnoreUnknownColumnIndexes)
+            {
+                throw TimeSeriesException.UnmappedColumnIndex(info.Index, typeof(T));
+            }
+
+            return;
+        }
+
+        var payload = columnSpan.Slice(ColumnHeader.Size, (int)header.DataLength);
+        var pool = ArrayPool<TValue>.Shared;
+        var array = pool.Rent(count);
+        try
+        {
+            var values = array.AsSpan(0, count);
+            Util.BrotliDecompress(payload, values);
+            for (var i = 0; i < count; i++)
+            {
+                materializer.Hydrate(values[i]);
+            }
+        }
+        finally
+        {
+            pool.Return(array);
         }
     }
 }

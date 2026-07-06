@@ -206,6 +206,25 @@ public class DiagnosticsTests
     }
 
     [Fact]
+    public void Ets009_number_distribution_ignored_on_decimal()
+    {
+        var run = GeneratorTestHelper.Run(
+            TestSources.Dto("""
+                [Column(0)]
+                public decimal Price { get; set; }
+
+                [Column(1, NumberDistribution = NumberDistribution.Random)]
+                public decimal Fee { get; set; }
+            """),
+            ct: TestContext.Current.CancellationToken);
+
+        Assert.True(run.HasDiagnostic("ETS009"));
+
+        // A warning must not block generation; the column falls back to the regular Decimal encoder.
+        Assert.Contains("""AddDecimal(new global::System.ArraySegment<decimal>(c1, 0, rows), "Fee")""", run.GeneratedSource("DtoWriter.g.cs"));
+    }
+
+    [Fact]
     public void Ets010_no_column_properties()
     {
         var run = GeneratorTestHelper.Run(

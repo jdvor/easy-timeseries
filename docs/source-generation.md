@@ -50,11 +50,15 @@ type. An explicit `ValueType` overrides the inference but must stay compatible w
 | ---------- | ---------------------------------- | ----------------- | --------------------------------------- |
 | `string`   | -                                  | Category          | `AddCategory`                           |
 | `int`      | -                                  | Int32             | `AddInt32`                              |
+| `int`      | `NumberDistribution = Random`      | Int32Raw          | `AddInt32Random`                        |
 | `long`     | -                                  | Int64             | `AddInt64`                              |
 | `float`    | -                                  | Float             | `AddFloat`                              |
 | `float`    | `NumberPrecision = DecimalPlacesN` | ScaledNumber32    | `AddScaledNumber32(..., N)`             |
+| `float`    | `NumberDistribution = Random`      | FloatRaw          | `AddFloatRandom`                        |
 | `double`   | -                                  | Double            | `AddDouble`                             |
 | `double`   | `NumberPrecision = DecimalPlacesN` | ScaledNumber64    | `AddScaledNumber64(..., N)`             |
+| `double`   | `NumberDistribution = Random`      | DoubleRaw         | `AddDoubleRandom`                       |
+| `long`     | `NumberDistribution = Random`      | Int64Raw          | `AddInt64Random`                        |
 | `decimal`  | (`NumberPrecision` is ignored)     | Decimal           | `AddDecimal`                            |
 | `bool`     | -                                  | Bool              | `AddBool`                               |
 | `DateTime` | `DateTimeSort = Ascending`         | DateTimeOrdered   | `AddTimeOrdered(..., DateTimePrecision)`|
@@ -63,6 +67,12 @@ type. An explicit `ValueType` overrides the inference but must stay compatible w
 
 `DateTimePrecision` defaults to `Milliseconds`, `TimeSpanPrecision` to `Seconds`; both translate 1:1 to the
 core `TimePrecision` enum.
+
+`NumberDistribution` defaults to `Continuous` (XOR/delta "Gorilla" encoding, compact for slowly-varying signals).
+Set it to `Random` on a `float`, `double`, `long` or `int` column whose values are uncorrelated between rows (e.g.
+geographic coordinates, identifiers) to store the values raw and Brotli-compressed instead - see the raw column
+types in `layout.md`. It is mutually exclusive with `NumberPrecision`: if both are set the scaled encoding wins and
+`NumberDistribution` is reported ignored (ETS009). Setting it on any other column type is likewise ignored (ETS009).
 
 ## Shape of the generated code
 

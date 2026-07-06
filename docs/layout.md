@@ -58,6 +58,10 @@ Value-type byte values (`ColumnValueType`):
 | 10   | `ScaledNumber64` |
 | 11   | `Category`       |
 | 12   | `DateTimeUnordered` |
+| 13   | `FloatRaw`       |
+| 14   | `DoubleRaw`      |
+| 15   | `Int64Raw`       |
+| 16   | `Int32Raw`       |
 
 ### Meta field semantics
 
@@ -232,6 +236,25 @@ The reader peeks the prefix bit then reads either 4 or 15 bits for the id, and l
 Labels are written in id-sorted order, so the i-th entry has id `i`. The reader recovers the id-to-label mapping by counting.
 
 The reader finds the map by reading the column header's `DataLength` and jumping past `ColumnHeader.Size + DataLength` from the start of the column block (see `CategoryReader.ReadCategoryMap`). `Header.ReadLayout` calls `ColumnHeader.GetTotalLength(buffer, ColumnValueType.Category)` to include the map length when computing column offsets - this is the **only** case where the column block extends past `ColumnHeader.Size + DataLength`.
+
+### `FloatRaw` / `DoubleRaw` / `Int64Raw` / `Int32Raw` (raw values, Brotli-compressed)
+
+Implementation: `RawColumn` (shared codec), driven by `Writer.AddFloatRandom` / `AddDoubleRandom` /
+`AddInt64Random` / `AddInt32Random` on the write side and `Reader.ColumnRaw<T, TValue>` on the read side.
+`Meta` is unused (`0`).
+
+For numeric columns whose values are **uncorrelated between rows** (e.g. geographic coordinates, identifiers), the
+XOR/delta ("Gorilla") encoding used by `Float`/`Double`/`Int64`/`Int32` gives no benefit and can even exceed the raw
+32/64-bit width because of its per-value control bits. These column types skip that encoding entirely: the values are
+laid out as their raw little-endian bytes (`sizeof(T) * Records` bytes) and the whole block is Brotli-compressed.
+
+The packed-data area is therefore the Brotli image of the raw value bytes. `ColumnHeader.DataLength` is the compressed
+byte length, `ColumnHeader.Records` is the value count, and `BitsInLastWord` is `0` (the payload is not word-packed).
+Brotli parameters are fixed in `Constants.Brotli` (quality 9, window 22). Decoding decompresses straight into a
+`Records`-length value buffer, so the reader knows the exact output size up front.
+
+The transform is lossless and bit-preserving. Prefer the plain `Float`/`Double`/`Int64` types for slowly-varying
+signals - XOR/delta compresses those far better than Brotli-over-raw would.
 
 ## Worked example: one `Int32` column with one value
 

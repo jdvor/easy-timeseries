@@ -93,6 +93,10 @@ internal static class WriterEmitter
             ColumnKind.Int64 => $"AddInt64({segment}, {label})",
             ColumnKind.Float => $"AddFloat({segment}, {label})",
             ColumnKind.Double => $"AddDouble({segment}, {label})",
+            ColumnKind.FloatRaw => $"AddFloatRandom({segment}, {label})",
+            ColumnKind.DoubleRaw => $"AddDoubleRandom({segment}, {label})",
+            ColumnKind.Int64Raw => $"AddInt64Random({segment}, {label})",
+            ColumnKind.Int32Raw => $"AddInt32Random({segment}, {label})",
             ColumnKind.Decimal => $"AddDecimal({segment}, {label})",
             ColumnKind.Bool => $"AddBool({segment}, {label})",
             ColumnKind.ScaledNumber32 =>
