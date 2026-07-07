@@ -30,15 +30,29 @@ get_semver_from_git_tags () {
 }
 
 fatal_error () {
-    echo -e "[FAILURE] $1"
+    echo -e "[FAILURE] $1" >&2
     exit ${2:-1}
+}
+
+note () {
+    echo -e "[NOTE] $1" >&2
 }
 
 or_die () {
     if [ $? -ne 0 ]; then
-        echo -e "[FAILURE] $1"
+        echo -e "[FAILURE] $1" >&2
         exit ${2:-1}
     fi
+}
+
+# Returns success if a tag with the given name exists locally.
+tag_exists () {
+    git rev-parse -q --verify "refs/tags/$1" > /dev/null 2>&1
+}
+
+# Echoes the commit SHA a tag points to (dereferences annotated tags).
+tagged_commit () {
+    git rev-list -n 1 "$1" 2> /dev/null
 }
 
 if [ -z "$semver" ]; then
@@ -69,7 +83,20 @@ if [ -n "$create_tag" ]; then
     if [ -z "$can_push_tag" ]; then
         fatal_error 'existing semantic version cannot be pushed again as new tag'
     fi
-    git tag $version &> /dev/null
-    git push origin $version &> /dev/null
-    or_die "pushing new version tag $version"
+
+    if tag_exists "$version"; then
+        existing=$(tagged_commit "$version")
+        head=$(git rev-parse HEAD 2> /dev/null)
+        if [ "$existing" = "$head" ]; then
+            # Idempotent re-run: the tag is already where we would create it.
+            note "tag '$version' already exists at HEAD ($existing); skipping tag creation"
+        else
+            fatal_error "tag '$version' already exists at $existing (not HEAD $head); refusing to move it - a NuGet package may already be published for this version."
+        fi
+    else
+        git tag "$version" > /dev/null 2>&1
+        or_die "creating version tag $version"
+        git push origin "$version" > /dev/null 2>&1
+        or_die "pushing new version tag $version"
+    fi
 fi

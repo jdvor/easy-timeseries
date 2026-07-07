@@ -54,6 +54,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Easy.TimeSeries.SrcGen.Test
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{ECCE59EC-2879-45AA-9644-C78B1A7E4A29}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{7961971F-9E24-470E-A66F-F6984E5890D2}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\publish.yml = .github\workflows\publish.yml
+		.github\workflows\test.yml = .github\workflows\test.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{3D6D8916-92D1-412D-A952-AC68DF8C5BF4}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\install-mdbook.sh = scripts\install-mdbook.sh
+		scripts\pack.sh = scripts\pack.sh
+		scripts\version.sh = scripts\version.sh
+		scripts\check-vulnerabilities.sh = scripts\check-vulnerabilities.sh
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -231,5 +247,8 @@ Global
 		{7FA031CF-B5BE-4DAF-AEC4-B44E83DB18B3} = {4E5540AD-D45A-4919-AA9D-C94FF6956200}
 		{37CC205D-CA7F-4F48-994D-53F4FB0B7043} = {4E5540AD-D45A-4919-AA9D-C94FF6956200}
 		{BB642960-731C-44E9-9530-DED178E90EC8} = {4E5540AD-D45A-4919-AA9D-C94FF6956200}
+		{ECCE59EC-2879-45AA-9644-C78B1A7E4A29} = {7F0A3757-9AA4-48EB-9388-9CE3E1AC85C5}
+		{7961971F-9E24-470E-A66F-F6984E5890D2} = {ECCE59EC-2879-45AA-9644-C78B1A7E4A29}
+		{3D6D8916-92D1-412D-A952-AC68DF8C5BF4} = {7F0A3757-9AA4-48EB-9388-9CE3E1AC85C5}
 	EndGlobalSection
 EndGlobal
