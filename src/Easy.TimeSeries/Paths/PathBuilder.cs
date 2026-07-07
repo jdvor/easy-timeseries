@@ -3,6 +3,11 @@ namespace Easy.TimeSeries.Paths;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+/// <summary>
+/// Maps between UTC timestamps and the date-partitioned file paths a time series is stored under
+/// (e.g. <c>root/2026/07/06/subject.dat</c> at day granularity). Builds the paths that cover a time range for
+/// reading and parses an existing path back into its timestamp and subject id.
+/// </summary>
 public sealed class PathBuilder
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
@@ -11,6 +16,8 @@ public sealed class PathBuilder
     private readonly string dateFmt;
     private readonly Regex rgx;
 
+    /// <summary>Creates a builder rooted at <paramref name="root"/> that partitions by <paramref name="granularity"/>.</summary>
+    /// <param name="suffix">File extension without the dot; defaults to <c>dat</c>.</param>
     public PathBuilder(string root, TimeGranularity granularity, string suffix = "dat")
     {
         this.root = root;
@@ -48,6 +55,7 @@ public sealed class PathBuilder
         return $"^{escapedRoot}/(?<Date>{datePattern})/(?<SubjectId>[a-z0-9_-]+)\\.{escapedSuffix}$";
     }
 
+    /// <summary>Parses a storage path back into its UTC <paramref name="dateTime"/> bucket and <paramref name="subjectId"/>. Returns <c>false</c> if the path does not match this builder's layout.</summary>
     public bool TryParse(string path, out DateTime dateTime, out string subjectId)
     {
         var match = rgx.Match(path);
@@ -65,6 +73,11 @@ public sealed class PathBuilder
         return true;
     }
 
+    /// <summary>
+    /// Enumerates the partition paths covering <paramref name="fromUtcInclusive"/> to <paramref name="toUtcExclusive"/>,
+    /// one per granularity bucket, plus their longest common path prefix (useful as a listing filter). Both bounds must
+    /// be UTC and span at least one bucket.
+    /// </summary>
     public (ICollection<string> paths, string prefix) GetExpectedPaths(
         DateTime fromUtcInclusive,
         DateTime toUtcExclusive)

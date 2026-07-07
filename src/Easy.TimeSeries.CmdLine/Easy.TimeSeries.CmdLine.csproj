@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>tsctl</ToolCommandName>
-    <AssemblyName>tsctl</AssemblyName>
+    <ToolCommandName>ets</ToolCommandName>
+    <AssemblyName>ets</AssemblyName>
     <IsPublishable>true</IsPublishable>
     <IsPackable>true</IsPackable>
     <IsTrimmable>true</IsTrimmable>

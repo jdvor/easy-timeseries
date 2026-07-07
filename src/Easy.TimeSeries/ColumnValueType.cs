@@ -2,6 +2,11 @@ namespace Easy.TimeSeries;
 
 using System.Diagnostics.CodeAnalysis;
 
+/// <summary>
+/// The on-disk encoding of a column, written into the file header and used by the reader to pick the right decoder.
+/// This is the format-level counterpart to the public <see cref="Abstractions.DataValueType"/>; it additionally
+/// carries the raw+Brotli variants the writer selects for uncorrelated numeric data.
+/// </summary>
 [SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "because it is type name")]
 public enum ColumnValueType : byte
 {

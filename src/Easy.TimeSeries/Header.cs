@@ -4,24 +4,36 @@ using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Text;
 
+/// <summary>
+/// The file preamble: magic bytes, format <see cref="Version"/>, and the ordered <see cref="ColumnInfo"/> descriptors.
+/// It is the self-describing table of contents a reader uses to validate the buffer and locate each column block.
+/// </summary>
 public readonly record struct Header
 {
     internal const byte H1 = 0x02;
     internal const byte H2 = 0xFD;
+
+    /// <summary>Maximum number of columns a file may contain.</summary>
     public const int MaxColumns = 255;
     private static readonly Encoding Utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
+    /// <summary>Sentinel representing an unreadable or absent header.</summary>
     public static readonly Header Empty = new(Version.None, ImmutableArray<ColumnInfo>.Empty);
 
+    /// <summary>Format version of the file.</summary>
     public Version Version { get; }
 
+    /// <summary>Column descriptors in file order.</summary>
     public ImmutableArray<ColumnInfo> Columns { get; }
 
+    /// <summary>Whether this is the <see cref="Empty"/> sentinel.</summary>
     public bool IsEmpty => Version == Version.None;
 
     // 2 magic bytes, layout (1), label count (1), columns (n)
+    /// <summary>Upper bound on the serialized header size in bytes.</summary>
     public int SizeHint => 2 + 1 + 1 + Columns.Sum(x => x.SizeHint);
 
+    /// <summary>Creates a header for the given version and columns.</summary>
     public Header(Version version, ImmutableArray<ColumnInfo> columns)
     {
         if (columns.Length > MaxColumns)
@@ -33,6 +45,7 @@ public readonly record struct Header
         Columns = columns;
     }
 
+    /// <summary>Serializes the header into <paramref name="buffer"/> and returns the number of bytes written.</summary>
     public int WriteTo(Span<byte> buffer)
     {
         buffer[0] = H1;
@@ -54,6 +67,11 @@ public readonly record struct Header
         return total;
     }
 
+    /// <summary>
+    /// Attempts to parse a header from the start of <paramref name="buffer"/>. Returns <c>false</c> (and
+    /// <see cref="Empty"/>) on bad magic bytes, an unknown version, or a malformed descriptor rather than throwing.
+    /// </summary>
+    /// <param name="read">Number of header bytes consumed, i.e. the offset of the first column block.</param>
     public static bool TryReadFrom(ReadOnlySpan<byte> buffer, out Header header, out int read)
     {
         read = 0;
@@ -156,6 +174,11 @@ public readonly record struct Header
         return new ColumnInfo(index, valueType, meta, label);
     }
 
+    /// <summary>
+    /// Parses the header and walks the column blocks to produce a located <see cref="Column"/> for each. When
+    /// <paramref name="columnIndexes"/> is given, only those columns are returned, in that order (projection);
+    /// otherwise every column is returned. Throws <see cref="InvalidReadBufferException"/> on an invalid buffer.
+    /// </summary>
     public static (Header header, Column[] columns) ReadLayout(ReadOnlySpan<byte> buffer, int[]? columnIndexes = null)
     {
         if (!TryReadFrom(buffer, out var header, out var bytesRead))

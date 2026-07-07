@@ -1,10 +1,16 @@
 # Data Layout
 
-This document describes the byte-level layout of a serialized time-series file as produced by `Writer` and consumed by `ReadBuilder`. It is meant as a reference for contributors changing the encoding or implementing alternative readers/writers (for example, a source-generated hydrator, or a tool that converts to Parquet).
+This document explains the on-disk format of a serialized time-series file: how it is structured and why each column
+type is encoded the way it is. It is a conceptual reference for contributors and for anyone implementing an alternative
+reader or writer (for example a Parquet converter). It deliberately stops short of the exact bit-level arithmetic - the
+per-type writers and readers in `src/Easy.TimeSeries/Internal/` are the authoritative source for that. When this
+document and the code disagree, the code wins; fix the document.
 
-Authoritative source: the per-type writers and readers in `src/Easy.TimeSeries/Internal/`. When this document and the code disagree, the code wins; fix the document.
+For guidance on *which* encoding to choose for your data, see [Introduction](introduction.md). This document is about
+the format, not about how to use it optimally.
 
-All integers on disk are **little-endian**. All bit packing happens inside 64-bit words; words are themselves stored little-endian on disk.
+All integers on disk are **little-endian**. Bit-packed columns pack values into 64-bit words, themselves stored
+little-endian.
 
 ## Top-level file structure
 
@@ -16,13 +22,16 @@ flowchart TB
     Cn --> CN["Column N-1"]
 ```
 
-A file is one **file header** followed by N **column blocks** laid out contiguously, in the order columns were added via `Writer.Add*`. The number of columns is declared by the file header (max 255).
-
-There is no overall file footer, no overall checksum, no padding between column blocks.
+A file is one **file header** followed by N **column blocks** laid out contiguously, in the order columns were added via
+`Writer.Add*`. The header declares how many columns follow (max 255). There is no file footer, no overall checksum, and
+no padding between blocks - the header alone is enough to locate and decode every column.
 
 ## File header
 
 Implementation: `Header.WriteTo` and `Header.TryReadFrom` (`src/Easy.TimeSeries/Header.cs`).
+
+The header is a small, self-describing table of contents: two magic bytes and a version so a reader can reject buffers
+it does not understand, a column count, and one descriptor per column.
 
 | Offset | Size     | Field              | Notes                                            |
 | ------ | -------- | ------------------ | ------------------------------------------------ |
@@ -33,6 +42,8 @@ Implementation: `Header.WriteTo` and `Header.TryReadFrom` (`src/Easy.TimeSeries/
 | 4      | variable | Column descriptors | `N` `ColumnInfo` records, concatenated.          |
 
 ### Column descriptor (one per column)
+
+Each descriptor names the column's encoding, carries an encoding-specific `Meta` value, and an optional label.
 
 | Offset relative | Size         | Field        | Notes                                                                              |
 | --------------- | ------------ | ------------ | ---------------------------------------------------------------------------------- |
@@ -65,6 +76,8 @@ Value-type byte values (`ColumnValueType`):
 
 ### Meta field semantics
 
+`Meta` is a 4-byte scratch field whose meaning depends on the value type.
+
 | Value type             | `Meta` interpretation                                                                                |
 | ---------------------- | ---------------------------------------------------------------------------------------------------- |
 | `DateTimeOrdered`, `DateTimeUnordered`, `TimeSpan` | `TimePrecision` enum value (`Milliseconds=0`, `TenthsOfSecond=1`, `Seconds=2`, `Days=3`, `Years=4`). |
@@ -73,7 +86,8 @@ Value-type byte values (`ColumnValueType`):
 
 ## Column block
 
-Every column block has the same first 9 bytes (the `ColumnHeader`) followed by `DataLength` bytes of packed data. The `Category` column type then appends a `CategoryMap` after the packed data; no other type does.
+Every column block starts with a fixed 9-byte `ColumnHeader` followed by `DataLength` bytes of packed data. Only the
+`Category` type appends anything more (its dictionary map).
 
 ```mermaid
 flowchart LR
@@ -85,207 +99,135 @@ flowchart LR
 
 Implementation: `ColumnHeader.WriteTo` and `ColumnHeader.TryReadFrom` (`src/Easy.TimeSeries/Internal/ColumnHeader.cs`).
 
+These three fields let a reader find the end of the block, know how many values to decode, and know how much of the
+final word is meaningful.
+
 | Offset | Size | Field            | Notes                                                                                                           |
 | ------ | ---- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
 | 0      | 4    | `DataLength`     | uint32 LE. Byte length of the packed data that follows (multiple of 8). Excludes the 9-byte header itself.      |
 | 4      | 4    | `Records`        | int32 LE. Number of logical values stored. Must be `>= 1`.                                                      |
 | 8      | 1    | `BitsInLastWord` | 0-64. How many bits of the last 8-byte word are actually used. `0` means the last word is fully used (64 bits). |
 
-`TotalBits` is derived: `BitsInLastWord == 0 ? DataLength * 8 : (DataLength - 8) * 8 + BitsInLastWord`.
+`DataLength` counts bytes, `Records` counts values; they are independent. `TotalBits` is derived from `DataLength` and
+`BitsInLastWord`, not from `Records`.
 
 ### Packed-data area
 
-The packed-data area is a sequence of 64-bit little-endian words. Per-type writers push bits into the current word low-to-high via `BitWriter`; when 64 bits are reached the word is flushed to the buffer and a new word starts. The trailing word is padded with zero bits and recorded in `BitsInLastWord`.
+For bit-packed columns the packed data is a sequence of 64-bit little-endian words. Per-type writers push bits into the
+current word low-to-high; when it fills, the word is flushed and a new one starts. The trailing word is zero-padded and
+its used-bit count recorded in `BitsInLastWord`. Each column block starts on a byte boundary - there is no bit-stream
+stitching between columns, so a column can only be decoded with the reader matching its declared value type.
 
-`Writer` aligns the start of each column block on a byte boundary (no inter-column bit-stream stitching). Reading must use the per-column reader corresponding to the value type declared in the file header.
-
-The encoding of each value type follows below.
+The raw+Brotli column types are the exception: their packed data is a compressed byte image, not word-packed bits (see
+below).
 
 ## Per-type encodings
 
-### `Int32` (XOR + block, 32-bit)
+The encodings fall into three families: **XOR/delta** for numbers that vary slowly, **quantized/dictionary** transforms
+that shrink the data before storing it, and **raw+Brotli** for values with no exploitable structure. What follows is the
+intent of each; consult the `Internal/` writer/reader pair for the exact bit mechanics.
 
-Implementation: `Int32Writer` / `Int32Reader`. Used directly by `Int32`, and indirectly by `Float` (via raw `Int32` bits), `ScaledNumber32` (scaled integer), and `TimeSpan` (ticks divided by precision).
+### Integers - `Int32` and `Int64` (XOR + block)
 
-Per value, the writer emits:
+Implementation: `Int32Writer`/`Int32Reader`, `Int64Writer`/`Int64Reader`.
 
-1. **First value**: 32 bits of the raw value, verbatim. No control bits. `prevBlock` starts as `(leadingZeros=32, trailingZeros=32, blockSize=0)`.
-2. **Subsequent values**:
-   - Compute `xor = prevValue ^ value`.
-   - If `xor == 0`: emit one `0` bit. Value is identical to previous.
-   - Else: emit one `1` bit, then:
-     - If `xor` fits inside the previous block window (leading and trailing zeros both `>= prevBlock`): emit one `0` bit, then `prevBlock.BlockSize` bits of `xor >> prevBlock.TrailingZeros`.
-     - Else: emit one `1` bit, then 4 bits of `leadingZeros`, then 5 bits of `blockSize - 1`, then `blockSize` bits of `xor >> trailingZeros`. The reader recomputes `trailingZeros = 32 - blockSize - leadingZeros`. The new block becomes `prevBlock`.
+The first value is stored verbatim (32 or 64 bits). Each subsequent value is stored as its XOR against the previous one:
+identical values cost a single bit, and values that differ only in a narrow range of bits store just that range plus a
+small descriptor of where it sits. This is compact when neighboring values are similar and degrades toward the raw width
+when they are not. `Int32` also underpins `Float`, `ScaledNumber32`, and `TimeSpan`; `Int64` underpins `Double` and
+`ScaledNumber64`.
 
-`blockSize` widths come from `Constants.Size32`: `LeadingZerosLengthBits = 4` (max 15), `BlockSizeLengthBits = 5` (max 32). Negative `Int32` values are stored as a block with `leadingZeros = 0, trailingZeros = 0` (full 32-bit window), see `Block.CreateBlock32`.
+### `Float` and `Double`
 
-### `Int64` (XOR + block, 64-bit)
+Reinterpreted to their raw integer bits (`float`→`int`, `double`→`long`) and stored through the corresponding integer
+encoder. Lossless. Because the XOR scheme keys off similar bit patterns, this compresses well only for slowly-varying
+signals; uncorrelated values are better served by `FloatRaw`/`DoubleRaw`.
 
-Same scheme as `Int32`, but with 64-bit values and the wider `Constants.Size64` field widths: 5 bits for `leadingZeros` (max 31), 6 bits for `blockSize - 1` (max 64). The first value is stored in 64 raw bits. Used directly by `Int64`, and indirectly by `Double` (via raw `Int64` bits) and `ScaledNumber64` (scaled integer).
+### `Decimal`
 
-### `Float`
+Implementation: `DecimalWriter`/`DecimalReader`, sharing the XOR state machine with `Int64`.
 
-Stored as `BitConverter.SingleToInt32Bits(value)` through an `Int32Writer`. No additional metadata. `Meta = 0`.
+A `decimal` is split into two 64-bit words - the low mantissa bits, and a second word holding the remaining mantissa
+bits, the scale, and the sign - each carried through an independent `Int64`-style XOR stream. The round-trip is exact,
+including non-canonical scale (`1.0m` and `1.00m` are preserved distinctly). For typical columns the second word never
+changes and costs about one bit per row, so the column compresses much like an `Int64` column.
 
-### `Double`
+### `ScaledNumber32` and `ScaledNumber64` (lossy)
 
-Stored as `BitConverter.DoubleToInt64Bits(value)` through an `Int64Writer`. No additional metadata. `Meta = 0`.
-
-### `Decimal` (two interleaved XOR streams)
-
-Implementation: `DecimalWriter` / `DecimalReader`, sharing the XOR + block state machine (`Xor64Writer` / `Xor64Reader`)
-with `Int64Writer` / `Int64Reader`. `Meta = 0`.
-
-A `decimal` is 128 bits: a 96-bit unsigned mantissa (`lo`/`mid`/`hi` 32-bit parts from `decimal.GetBits`), a sign bit,
-and a scale 0-28. Each value is split into two 64-bit logical words:
-
-| Word       | Content (LSB first)                                                       |
-| ---------- | ------------------------------------------------------------------------- |
-| `mantissa` | bits 0-63 of the mantissa (`lo \| mid << 32`)                             |
-| `meta`     | bits 0-31: `hi`; bits 32-39: scale; bit 40: sign (1 = negative); rest 0   |
-
-Per record the writer emits one `Int64`-style XOR + block frame for `mantissa`, then one for `meta`, in that order,
-committed as a single logical entry. Each stream keeps its own XOR state (previous value and previous block); they only
-share the bit sequence. The first record therefore costs 128 raw bits.
-
-For typical columns (constant number of decimal places, absolute values below `~1.8e19`) the `meta` word never changes,
-so it costs a single `0` bit per record after the first - the column compresses like an `Int64` column plus one bit per
-record.
-
-The round-trip is exact, including non-canonical scale: `1.0m` and `1.00m` have different representations (scale 1 vs 2)
-and are preserved as written.
-
-### `ScaledNumber32`
-
-`v = (int)Math.Round(value * scale)` where `scale = 10^decimalPlaces`. Then stored through an `Int32Writer`. `Meta = decimalPlaces` (1-8). The reader recovers `value = ((float)((double)v / scale))`. Use this when input is `float` but its meaningful precision is a small, fixed number of decimal places - it compresses dramatically better than raw `Float`.
-
-### `ScaledNumber64`
-
-Same as `ScaledNumber32` with `long` and `Int64Writer`. `Meta = decimalPlaces` (1-8).
+A floating value is multiplied by `10^decimalPlaces`, rounded to an integer, and stored through the matching integer
+encoder; `Meta` holds `decimalPlaces`. This trades precision for size and compresses dramatically better than raw floats
+when the meaningful precision is a small, fixed number of decimals. `ScaledNumber32` requires the scaled value to fit in
+`int`; use `ScaledNumber64` otherwise.
 
 ### `TimeSpan`
 
-`ticks = value.Ticks / precisionDivisor` (truncating). Stored as an `Int32` through `Int32Writer`. `Meta` is the `TimePrecision` enum value. Range is therefore bounded by `[int.MinValue * divisor, int.MaxValue * divisor]` ticks - `TimeSpanWriter` validates the input.
+The interval's ticks are divided by the precision divisor (truncating) and stored as an `Int32`. `Meta` holds the
+`TimePrecision`. The range is bounded by what fits in `int` at the chosen precision, which the writer validates.
 
 ### `Bool`
 
-One bit per value, packed low-to-high inside each 64-bit word. No control bits, no compression. `BoolReader` reads exactly `ColumnHeader.Records` bits. `Meta = 0`.
+One bit per value, packed low-to-high, no compression. The reader consumes exactly `Records` bits.
 
 ### `DateTimeOrdered` (delta-of-delta)
 
-Implementation: `DateTimeOrderedWriter` / `DateTimeOrderedReader`. `Meta` is the `TimePrecision`.
+Implementation: `DateTimeOrderedWriter`/`DateTimeOrderedReader`. `Meta` holds the `TimePrecision`.
 
-Every input must be UTC and monotonically non-decreasing (the writer throws otherwise). The timestamp is normalized to `(dt.Ticks - Epoch.Ticks) / precisionDivisor` where `Epoch = 2000-01-01T00:00:00Z`. At millisecond precision this stays within 41 bits until `2069-09-06T15:47:35.551Z` (`Constants.TimeStamp.MaxBits = 41`).
+The intended encoding for time-series timestamps. Inputs must be UTC and monotonically non-decreasing (the writer throws
+otherwise). Timestamps are normalized against a fixed epoch of `2000-01-01T00:00:00Z` at the chosen precision, then
+stored as the *change in the interval between consecutive values* (delta-of-delta). Regularly-sampled series - the
+common case - have a near-constant interval, so most values cost a single bit; irregular gaps fall back to progressively
+wider fixed-width buckets. At millisecond precision the normalized timestamp is capped at 41 bits, reaching roughly
+`2069-09-06T15:47:35Z`.
 
-Per value, the writer emits:
+### `DateTimeUnordered` (absolute, XOR)
 
-1. **First value**: 41 bits of the normalized timestamp, verbatim. `prevDelta` is initialized to `1`.
-2. **Subsequent values**:
-   - `delta = ts - prevTs`, `dod = delta - prevDelta`.
-   - If `dod == 0`: emit one `0` bit. `prevTs = ts`. (`prevDelta` unchanged.)
-   - Else: emit one `1` bit, then a 2-bit prefix selecting one of four bucket widths, then `dod + bias` in the bucket width. `prevTs = ts`, `prevDelta = delta`.
+Implementation: `DateTimeUnorderedWriter`/`DateTimeUnorderedReader`. `Meta` holds the `TimePrecision`.
 
-Bucket table (from `Constants.TimeStamp`):
+For `DateTime` columns that are **not** sorted - values in any order, repeats, or timestamps before the epoch (stored as
+negative). Timestamps are normalized against the same epoch but stored as full 64-bit absolute values through the
+`Int64` XOR state machine, so neither the 41-bit ceiling nor the ordering constraint applies. It costs at worst slightly
+more than the raw 64 bits, and less when neighboring values share high bits (typical for event times in a window).
+Prefer `DateTimeOrdered` whenever the column is sorted - it compresses far better.
 
-| Prefix (2 bits) | Encoded bits | `                         | dod | <` |
-| --------------- | ------------ | ------------------------- |
-| `00`            | 3            | 4 (`2^(3-1)`)             |
-| `01`            | 7            | 64 (`2^(7-1)`)            |
-| `10`            | 12           | 2048 (`2^(12-1)`)         |
-| `11`            | 32           | otherwise (32-bit signed) |
+### `Category` (dictionary)
 
-The bias added before writing equals the bucket's `2^(bits-1)` (so the on-disk value is unsigned). The reader subtracts the same bias.
+Implementation: `CategoryWriter`/`CategoryReader`, with `CategoryMap` and `IdAccumulator`.
 
-### `DateTimeUnordered` (absolute timestamp, XOR)
+Strings are mapped to small contiguous integer ids; the packed data stores the id sequence (narrow ids cost fewer bits
+than wide ones), and the id-to-label dictionary is appended **after** the packed data. This is the one column type whose
+block extends past `ColumnHeader.Size + DataLength`, so `Header.ReadLayout` asks `ColumnHeader.GetTotalLength` to include
+the map when computing column offsets. Ideal for low-cardinality repeated text; poorly suited to high-cardinality free
+text.
 
-Implementation: `DateTimeUnorderedWriter` / `DateTimeUnorderedReader`. `Meta` is the `TimePrecision`.
-
-For `DateTime` columns whose values are **not** sorted. Every input must be UTC, but there is no ordering constraint:
-values may appear in any order, repeat, or even precede the epoch (the timestamp is then negative). The timestamp is
-normalized exactly as for `DateTimeOrdered` - `(dt.Ticks - Epoch.Ticks) / precisionDivisor` - but stored as a full 64-bit
-value through the same XOR + block state machine used by `Int64` (`Xor64Writer`/`Xor64Reader`), so neither the 41-bit
-ceiling nor the monotonicity requirement of the delta-of-delta encoding applies.
-
-Prefer `DateTimeOrdered` when the column is monotonically non-decreasing - delta-of-delta compresses it
-considerably better. `DateTimeUnordered` costs at worst ~66 bits per value (vs. 64 raw), and much less when
-neighboring values share high bits, which is typical for event times clustered in a window.
-
-### `Category` (dictionary, variable-width id)
-
-Implementation: `CategoryWriter` / `CategoryReader`, with `CategoryMap` and `IdAccumulator`.
-
-`Writer.AddCategory` first builds a `CategoryMap` (label -> short id, contiguous starting at 0) using an `IdAccumulator`. The packed-data area stores the id sequence; the dictionary is appended **after** the packed data.
-
-Per id, the writer emits one of two variable-width frames:
-
-| Id range | Frame bits | Layout (LSB first)           |
-| -------- | ---------- | ---------------------------- |
-| `0..15`  | 5          | `0` (prefix) + 4 bits of id  |
-| `16..n`  | 16         | `1` (prefix) + 15 bits of id |
-
-The reader peeks the prefix bit then reads either 4 or 15 bits for the id, and looks up the label in the `CategoryMap`.
-
-#### `CategoryMap` (appended after the packed data)
-
-| Offset relative | Size     | Field                | Notes                                                                   |
-| --------------- | -------- | -------------------- | ----------------------------------------------------------------------- |
-| 0               | 2        | `totalSize` (uint16) | Byte length of the rest of the map (excludes these 2 size bytes).       |
-| 2               | 2        | `count` (int16)      | Number of label entries (must be `> 0`, max `short.MaxValue`).          |
-| 4               | variable | Labels               | `count` entries: 1 byte length + ASCII bytes (max 255 chars per label). |
-
-Labels are written in id-sorted order, so the i-th entry has id `i`. The reader recovers the id-to-label mapping by counting.
-
-The reader finds the map by reading the column header's `DataLength` and jumping past `ColumnHeader.Size + DataLength` from the start of the column block (see `CategoryReader.ReadCategoryMap`). `Header.ReadLayout` calls `ColumnHeader.GetTotalLength(buffer, ColumnValueType.Category)` to include the map length when computing column offsets - this is the **only** case where the column block extends past `ColumnHeader.Size + DataLength`.
+The appended `CategoryMap` begins with its own byte length, then an entry count, then the labels in id order (each a
+length-prefixed string), so a reader recovers the id→label mapping by position. See `CategoryReader.ReadCategoryMap` for
+the exact byte offsets.
 
 ### `FloatRaw` / `DoubleRaw` / `Int64Raw` / `Int32Raw` (raw values, Brotli-compressed)
 
-Implementation: `RawColumn` (shared codec), driven by `Writer.AddFloatRandom` / `AddDoubleRandom` /
-`AddInt64Random` / `AddInt32Random` on the write side and `Reader.ColumnRaw<T, TValue>` on the read side.
-`Meta` is unused (`0`).
+Implementation: `Util.BrotliCompress`/`BrotliDecompress`, driven by `Writer.AddFloatRandom` / `AddDoubleRandom` /
+`AddInt64Random` / `AddInt32Random` and `Reader.ColumnRaw<T, TValue>`. `Meta` is unused.
 
-For numeric columns whose values are **uncorrelated between rows** (e.g. geographic coordinates, identifiers), the
-XOR/delta ("Gorilla") encoding used by `Float`/`Double`/`Int64`/`Int32` gives no benefit and can even exceed the raw
-32/64-bit width because of its per-value control bits. These column types skip that encoding entirely: the values are
-laid out as their raw little-endian bytes (`sizeof(T) * Records` bytes) and the whole block is Brotli-compressed.
+For numeric columns whose values are **uncorrelated between rows** (geographic coordinates, identifiers, and similar),
+the XOR/delta scheme gives no benefit and its per-value control bits can even exceed the raw width. These types skip it
+entirely: the values are laid out as their raw little-endian bytes and the whole block is Brotli-compressed. The
+transform is lossless and bit-preserving.
 
-The packed-data area is therefore the Brotli image of the raw value bytes. `ColumnHeader.DataLength` is the compressed
-byte length, `ColumnHeader.Records` is the value count, and `BitsInLastWord` is `0` (the payload is not word-packed).
-Brotli parameters are fixed in `Constants.Brotli` (quality 9, window 22). Decoding decompresses straight into a
-`Records`-length value buffer, so the reader knows the exact output size up front.
-
-The transform is lossless and bit-preserving. Prefer the plain `Float`/`Double`/`Int64` types for slowly-varying
-signals - XOR/delta compresses those far better than Brotli-over-raw would.
-
-## Worked example: one `Int32` column with one value
-
-Suppose `Writer.AddInt32([42], "x").WriteToAsync(...)`. The resulting bytes are:
-
-| Offset | Bytes (hex)               | Meaning                                                       |
-| ------ | ------------------------- | ------------------------------------------------------------- |
-| 0      | `02 FD`                   | Magic.                                                        |
-| 2      | `01`                      | Version V1.                                                   |
-| 3      | `01`                      | One column.                                                   |
-| 4      | `06`                      | ColumnValueType.Int32.                                        |
-| 5      | `00 00 00 00`             | Meta = 0.                                                     |
-| 9      | `01`                      | Label length = 1.                                             |
-| 10     | `78`                      | Label `"x"`.                                                  |
-| 11     | `08 00 00 00`             | ColumnHeader: DataLength = 8.                                 |
-| 15     | `01 00 00 00`             | ColumnHeader: Records = 1.                                    |
-| 19     | `20`                      | ColumnHeader: BitsInLastWord = 32 (the 32-bit first value).   |
-| 20     | `2A 00 00 00 00 00 00 00` | One 8-byte word: `42` in the low 32 bits, zero padding above. |
-
-Total: 28 bytes. (Adjust the label and meta bytes for other columns.)
+For these blocks `DataLength` is the *compressed* byte length, `Records` is the value count, and `BitsInLastWord` is `0`
+(the payload is not word-packed). Because `Records` gives the exact decompressed size up front, the reader decompresses
+straight into a value buffer. Prefer the plain `Float`/`Double`/`Int64`/`Int32` types for slowly-varying signals -
+XOR/delta beats Brotli-over-raw there.
 
 ## Invariants worth remembering when changing the format
 
-- A logical entry is a **single call** to a per-type writer. The per-type writer is responsible for calling `BitWriter.CommitRecord()` exactly once per entry, even when the underlying `Write` emits multiple bit groups. Forgetting this makes `ColumnHeader.Records` wrong and breaks the reader.
-- `BitWriter.Flush()` is the only call site that writes the column header; `Writer.CreateWriters` reserves the first 9 bytes of each column buffer for that header.
-- `DataLength` is in **bytes** and is always a multiple of 8. `TotalBits` and `Records` are independent counts; do not multiply `DataLength` by 8 to get either of them.
-- For `Category`, the map size lives in the first 2 bytes of the map area (`uint16`). `Header.ReadLayout` and `CategoryReader.ReadCategoryMap` both rely on this to advance past the column.
-- For `ScaledNumber*`, `ColumnInfo.Meta` is `decimalPlaces`, not `scale`. Both the writer and the reader must compute `scale = 10^decimalPlaces`.
-- `ScaledNumber32` uses `int` and `Math.Round`; the absolute value of `value * 10^decimalPlaces` must fit in `int.MaxValue` (`~2.1e9`). Use `ScaledNumber64` if it does not.
-- `DateTimeOrdered` requires `DateTimeKind.Utc` and monotonically non-decreasing timestamps. The 41-bit ceiling at millisecond precision is `Epoch + 2^41 - 1` ms ≈ `2069-09-06T15:47:35.551Z`.
-- The `DateTimeOrdered` writer (delta-of-delta) is for time-series-ordered columns only. DTO collections that happen to carry
-  arbitrary `DateTime` properties (e.g. a birth date) violate the monotonic-UTC constraint and will throw at write
-  time - use `DateTimeUnordered` (`Writer.AddTimeUnordered`) for those. Selection between the two writers will be
-  codified by the source generator via `ColumnAttribute.DateTimeSort`.
+- A logical entry is a **single call** to a per-type writer. The writer must call `BitWriter.CommitRecord()` exactly once
+  per entry even when it emits several bit groups; miscounting breaks `ColumnHeader.Records` and the reader.
+- `BitWriter.Flush()` is the only place the column header is written; `Writer.CreateWriters` reserves the first 9 bytes of
+  each column buffer for it.
+- `DataLength` is in **bytes** (a multiple of 8 for bit-packed columns); `Records` is a value count. They are independent -
+  do not derive one from the other.
+- For `ScaledNumber*`, `Meta` is `decimalPlaces`, not the scale. Both sides compute `scale = 10^decimalPlaces`.
+- `DateTimeOrdered` requires UTC, monotonically non-decreasing input and is capped near `2069-09-06` at millisecond
+  precision. Arbitrary `DateTime` properties (e.g. a birth date) belong in `DateTimeUnordered`.
+- Only `Category` extends its block past `ColumnHeader.Size + DataLength`; `Header.ReadLayout` relies on this when walking
+  columns.

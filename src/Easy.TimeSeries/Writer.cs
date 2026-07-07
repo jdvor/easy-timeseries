@@ -15,18 +15,24 @@ public sealed class Writer : IDisposable
     private readonly int rows;
     private bool disposed;
 
+    /// <summary>File format version stamped into the header.</summary>
     public Version Version { get; init; } = Version.V1;
 
+    /// <summary>Fraction a per-column buffer grows by when it runs out of space (e.g. 0.5 = grow by half).</summary>
     public float BufferGrowFactor { get; init; } = Constants.DefaultBufferGrowFactor;
 
+    /// <summary>Upper bound on how large a single column buffer may grow before writing throws, as a guard against runaway allocation.</summary>
     public int MaxAllowedBufferSize { get; init; } = Constants.MaxAllowedBufferSize;
 
+    /// <summary>Creates a writer for a fixed number of rows. Every <c>Add*</c> call reads at most this many values.</summary>
+    /// <param name="rows">Row count shared by all columns; must be at least 2.</param>
     public Writer(int rows)
     {
         Expect.EqualOrGreaterThan(rows, 2);
         this.rows = rows;
     }
 
+    /// <summary>Returns all pooled column buffers to the array pool.</summary>
     public void Dispose()
     {
         if (disposed)
@@ -105,6 +111,7 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>Adds a <see cref="TimeSpan"/> column. Intervals are truncated to <paramref name="precision"/> before encoding.</summary>
     public Writer AddInterval(
         IEnumerable<TimeSpan> values,
         string columnLabel,
@@ -132,6 +139,10 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a <see cref="float"/> column stored losslessly with XOR/delta encoding. Best for slowly-varying signals.
+    /// For uncorrelated values use <see cref="AddFloatRandom"/>; to trade precision for size use <see cref="AddScaledNumber32"/>.
+    /// </summary>
     public Writer AddFloat(IEnumerable<float> values, string columnLabel)
     {
         var sizeHint = FloatWriter.GetSizeHint(rows);
@@ -200,6 +211,12 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a <see cref="float"/> column quantized to <paramref name="decimalPlaces"/> and stored as a scaled 32-bit
+    /// integer (lossy). Compresses far better than <see cref="AddFloat"/> when the meaningful precision is a small,
+    /// fixed number of decimals. The scaled value must fit in <see cref="int"/>; use <see cref="AddScaledNumber64"/> otherwise.
+    /// </summary>
+    /// <param name="decimalPlaces">Decimal places to retain, 1-8.</param>
     public Writer AddScaledNumber32(IEnumerable<float> values, string columnLabel, int decimalPlaces)
     {
         Expect.Range(decimalPlaces, 1, 8);
@@ -227,6 +244,10 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a <see cref="double"/> column stored losslessly with XOR/delta encoding. Best for slowly-varying signals.
+    /// For uncorrelated values use <see cref="AddDoubleRandom"/>; to trade precision for size use <see cref="AddScaledNumber64"/>.
+    /// </summary>
     public Writer AddDouble(IEnumerable<double> values, string columnLabel)
     {
         var sizeHint = DoubleWriter.GetSizeHint(rows);
@@ -251,6 +272,7 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>Adds a <see cref="decimal"/> column stored losslessly, including scale (so <c>1.0m</c> and <c>1.00m</c> round-trip distinctly).</summary>
     public Writer AddDecimal(IEnumerable<decimal> values, string columnLabel)
     {
         var sizeHint = DecimalWriter.GetSizeHint(rows);
@@ -275,6 +297,12 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a <see cref="double"/> column quantized to <paramref name="decimalPlaces"/> and stored as a scaled 64-bit
+    /// integer (lossy). The wider counterpart to <see cref="AddScaledNumber32"/> for values whose scaled magnitude
+    /// exceeds <see cref="int"/>.
+    /// </summary>
+    /// <param name="decimalPlaces">Decimal places to retain, 1-8.</param>
     public Writer AddScaledNumber64(IEnumerable<double> values, string columnLabel, int decimalPlaces)
     {
         Expect.Range(decimalPlaces, 1, 8);
@@ -302,6 +330,10 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds an <see cref="int"/> column stored losslessly with XOR/delta encoding. Best when successive values are
+    /// similar; for uncorrelated values use <see cref="AddInt32Random"/>.
+    /// </summary>
     public Writer AddInt32(IEnumerable<int> values, string columnLabel)
     {
         var sizeHint = Int32Writer.GetSizeHint(rows);
@@ -326,6 +358,10 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a <see cref="long"/> column stored losslessly with XOR/delta encoding. Best when successive values are
+    /// similar; for uncorrelated values use <see cref="AddInt64Random"/>.
+    /// </summary>
     public Writer AddInt64(IEnumerable<long> values, string columnLabel)
     {
         var sizeHint = Int64Writer.GetSizeHint(rows);
@@ -350,6 +386,7 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>Adds a <see cref="bool"/> column packed one bit per value.</summary>
     public Writer AddBool(IEnumerable<bool> values, string columnLabel)
     {
         var sizeHint = BoolWriter.GetSizeHint(rows);
@@ -374,6 +411,10 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Adds a string column stored as dictionary-encoded ids plus a label map. Ideal for low-cardinality, repeated
+    /// text (categories, tags, statuses); poorly suited to high-cardinality free text.
+    /// </summary>
     public Writer AddCategory(IEnumerable<string> values, string columnLabel)
     {
         var accumulator = new IdAccumulator(rows);
@@ -404,6 +445,7 @@ public sealed class Writer : IDisposable
         return this;
     }
 
+    /// <summary>Writes the header and every accumulated column to <paramref name="storage"/>, then closes it.</summary>
     public async Task WriteToAsync(IWriteStorage storage, CancellationToken cancellationToken = default)
     {
         await WriteHeaderAsync(storage, cancellationToken).ConfigureAwait(false);
