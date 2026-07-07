@@ -17,11 +17,12 @@ done
 pack_dir='./artifacts/pack'
 
 rm -rf "$pack_dir"
-dotnet pack src/DotnetMarkdownReports.App/DotnetMarkdownReports.App.csproj \
+dotnet pack timeseries.sln \
     -p:RunAnalyzers=false -p:AnalysisMode=None -clp:NoSummary --nologo -v minimal \
     -c Release \
     -o "$pack_dir" \
-    -p:VersionPrefix="$semantic_version" -p:VersionSuffix="$version_suffix"
+    -p:VersionPrefix="$semantic_version" \
+    -p:VersionSuffix="$version_suffix"
 
 readarray -d '' packages < <(find "$pack_dir" -type f -name "*.nupkg" -print0)
 if (( ${#packages[@]} == 0 )); then

@@ -6,6 +6,11 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: skip unit tests
+        required: false
+        type: boolean
 
 jobs:
   build:
@@ -20,7 +25,7 @@ jobs:
           submodules: true
 
       - name: Install .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.300
 
@@ -32,21 +37,23 @@ jobs:
           restore-keys: packages-${{ runner.os }}-
 
       - name: Execute tests
+        if: inputs.skip_tests == 'false' || inputs.skip_tests == '0' || inputs.skip_tests == ''
         run: dotnet test -c Release -v minimal --nologo
 
       - name: Determine semantic version
         id: semver
-        uses: paulhatch/semantic-version@v5.3.0
+        uses: paulhatch/semantic-version@v6.0.2
         with:
           tag_prefix: ""
-          major_pattern: "BREAKING CHANGE:"
+          # Breaking change if the body contains "BREAKING CHANGE", or a conventional-commit header uses "!" before the colon (e.g. "feat!:", "fix(api)!:").
+          major_pattern: "/(BREAKING CHANGE|(^|\\n)[a-z]+(\\([^)]+\\))?!:)/"
           minor_pattern: "feat:"
           search_commit_body: true
           version_format: "${major}.${minor}.${patch}"
 
       - name: Create version tag
         id: version
-        run: ./version.sh -v ${{ steps.semver.outputs.version }} -i ${{ steps.semver.outputs.increment }} --create-tag >> $GITHUB_OUTPUT
+        run: ./scripts/version.sh -v ${{ steps.semver.outputs.version }} -i ${{ steps.semver.outputs.increment }} --create-tag >> $GITHUB_OUTPUT
 
-      - name: Pack dotnet tool & push to nuget.org
-        run: ./pack.sh -v "${{ steps.version.outputs.version_prefix }}" -s "${{ steps.version.outputs.version_suffix }}" -p "${{ secrets.MDREPORT_API_KEY }}"
+      - name: Pack and push to nuget.org
+        run: ./scripts/pack.sh -v "${{ steps.version.outputs.version_prefix }}" -s "${{ steps.version.outputs.version_suffix }}" -p "${{ secrets.ETS_API_KEY }}"
