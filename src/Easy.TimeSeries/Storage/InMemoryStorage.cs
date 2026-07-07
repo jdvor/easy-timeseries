@@ -3,6 +3,10 @@ namespace Easy.TimeSeries.Storage;
 using Easy.TimeSeries.Abstractions;
 using static Easy.TimeSeries.Constants;
 
+/// <summary>
+/// In-memory backing for both writing and reading, buffered by a pooled array. Handy for tests, round-trips, and
+/// staging bytes before handing them to another sink. Write then read the same instance; dispose to return the buffer.
+/// </summary>
 public sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
 {
     private readonly PooledArrayBufferWriter buffer =

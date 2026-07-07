@@ -1,24 +1,38 @@
 namespace Easy.TimeSeries;
 
+/// <summary>
+/// Descriptor for one column as stored in the file header: its position, encoding, an encoding-specific
+/// <see cref="Meta"/> payload, and an optional label. Together the descriptors let a reader locate and decode each
+/// column block without inspecting the data.
+/// </summary>
 public readonly record struct ColumnInfo
 {
+    /// <summary>Maximum label length in characters.</summary>
     public const int MaxLabelLength = 120;
 
+    /// <summary>Sentinel describing no column (value type <see cref="ColumnValueType.None"/>).</summary>
     public static readonly ColumnInfo Empty = new(0);
 
+    /// <summary>Zero-based position of the column in the file.</summary>
     public int Index { get; }
 
+    /// <summary>The column's on-disk encoding.</summary>
     public ColumnValueType ValueType { get; }
 
+    /// <summary>Encoding-specific payload: time precision, decimal places, and so on. Interpretation depends on <see cref="ValueType"/>.</summary>
     public int Meta { get; }
 
+    /// <summary>Optional human-readable column name; empty when unset.</summary>
     public string Label { get; }
 
+    /// <summary>Whether this descriptor is the <see cref="Empty"/> sentinel.</summary>
     public bool IsEmpty => ValueType == ColumnValueType.None;
 
     // value type (1), meta (4), label string length (1), utf8 label (worst case: n * 2)
+    /// <summary>Upper bound on the serialized size of this descriptor in bytes.</summary>
     public int SizeHint => 1 + sizeof(int) + 1 + (Label.Length * 2);
 
+    /// <summary>Creates a descriptor for a column at <paramref name="index"/>.</summary>
     public ColumnInfo(int index, ColumnValueType valueType, int meta, string label)
     {
         Expect.Range(index, 0, Header.MaxColumns);

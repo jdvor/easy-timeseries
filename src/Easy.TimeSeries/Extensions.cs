@@ -1,5 +1,10 @@
 namespace Easy.TimeSeries;
 
+/// <summary>
+/// <see cref="DateTime"/> helpers that snap a timestamp to the start (or start of the next) year, month, day, or hour
+/// in UTC. Used to bucket time-series data into the file layout produced by <see cref="Paths.PathBuilder"/>. Every
+/// method normalizes to UTC first.
+/// </summary>
 public static class Extensions
 {
     public static DateTime BeginningOfYearUtc(this DateTime dt)

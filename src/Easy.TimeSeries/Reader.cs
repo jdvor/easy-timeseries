@@ -4,8 +4,15 @@ using Easy.TimeSeries.Abstractions;
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
+/// <summary>
+/// Decodes a serialized buffer column by column, dispatching each column to the reader for its
+/// <see cref="ColumnValueType"/> and pushing the values into an <see cref="IMaterializer{T}"/> to build the rows.
+/// The materializer decides which columns are mapped; <see cref="ReadOptions"/> controls projection and how
+/// unmapped columns are handled.
+/// </summary>
 public static class Reader
 {
+    /// <summary>Reads the buffer from <paramref name="storage"/> and materializes it into <typeparamref name="T"/> instances.</summary>
     public static async Task<T[]> ReadFromAsync<T>(
         IReadStorage storage,
         IMaterializer<T> materializer,
@@ -17,6 +24,7 @@ public static class Reader
         return ReadFrom(memory.Span, materializer, options);
     }
 
+    /// <summary>Materializes an in-memory buffer into <typeparamref name="T"/> instances without touching storage.</summary>
     public static T[] ReadFrom<T>(
         ReadOnlySpan<byte> buffer,
         IMaterializer<T> materializer,

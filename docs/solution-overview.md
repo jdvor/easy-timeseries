@@ -26,4 +26,8 @@
 
 ## Easy.TimeSeries.CmdLine
 
+## Easy.TimeSeries.TestData
+
 ## Easy.TimeSeries.Benchmarks
+
+## Easy.Sample

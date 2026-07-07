@@ -2,6 +2,10 @@ namespace Easy.TimeSeries.Storage;
 
 using Easy.TimeSeries.Abstractions;
 
+/// <summary>
+/// Local-file backing for both writing and reading a serialized buffer. Writes stream to the file as columns are
+/// flushed; reads load the whole file into memory. Dispose to release the underlying stream.
+/// </summary>
 public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
 {
     private readonly FileInfo file;
