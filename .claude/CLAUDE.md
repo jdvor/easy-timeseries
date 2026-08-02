@@ -27,8 +27,8 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries`              | implemented | Core library. Bit-level encoders/decoders, `Header`, `Writer`, `ReadBuilder`, `ReflectionBasedMaterializer`, storage.      |
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
 | `src/Easy.TimeSeries.AzureBlobs`   | skeleton    | One placeholder `Class1.cs`. To mirror local-file storage in Azure Blobs.                                                  |
-| `src/Easy.TimeSeries.Parquet`      | skeleton    | Empty. Future conversion to/from Apache Parquet (`Parquet.Net` package referenced centrally).                              |
-| `src/Easy.TimeSeries.CmdLine`      | scaffolding | Debugging/conversion CLI built on `Cocona.Lite`. Sandbox-quality.                                                          |
+| `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
+| `src/Easy.TimeSeries.CmdLine`      | scaffolding | Debugging/conversion CLI built on `ConsoleAppFramework`. Sandbox-quality.                                                   |
 | `src/Easy.TimeSeries.Benchmarks`   | sandbox     | `BenchmarkDotNet` harness; rough benchmarks for buffer sizing etc. Treat as scratch space until critical paths are pinned. |
 | `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |
 | `tests/Easy.TimeSeries.Tests`      | implemented | xUnit v3 tests for the core library. Good coverage for bit-level writers/readers and the DTO round-trip.                   |
@@ -131,7 +131,7 @@ Read these before touching anything in `Internal/`:
   defaults.
 - For C# navigation, prefer `cwm-roslyn-navigator` MCP tools (`find_symbol`, `find_references`, `get_diagnostics`,
   `get_project_graph`) over reading files or shelling out to `dotnet build`.
-- For external library docs (e.g. `Parquet.Net`, `Cocona.Lite`, `BenchmarkDotNet`, `xunit.v3`), use `context7` MCP
+- For external library docs (e.g. `Parquet.Net`, `ConsoleAppFramework`, `BenchmarkDotNet`, `xunit.v3`), use `context7` MCP
   first; for Microsoft/Azure APIs use `microsoft-docs` MCP.
 - Commits follow the format in `~/.claude/rules/git-commits.md` (`type: header [JIRA-ID?]`, body explains why).
   Conventional prefixes also drive semantic versioning in CI.

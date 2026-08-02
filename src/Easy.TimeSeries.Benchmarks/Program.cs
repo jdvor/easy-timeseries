@@ -1,13 +1,15 @@
 using BenchmarkDotNet.Running;
-using Cocona;
+using ConsoleAppFramework;
 using Easy.TimeSeries.Benchmarks;
 
 // First positional argument decides who parses the command line: a known custom command goes to
-// Cocona, everything else (including no arguments) goes to BenchmarkDotNet's own CLI.
-string[] coconaCommands = ["size", "list"];
-if (args.Length > 0 && coconaCommands.Contains(args[0], StringComparer.OrdinalIgnoreCase))
+// ConsoleAppFramework, everything else (including no arguments) goes to BenchmarkDotNet's own CLI.
+string[] customCommands = ["size", "list"];
+if (args.Length > 0 && customCommands.Contains(args[0], StringComparer.OrdinalIgnoreCase))
 {
-    CoconaLiteApp.Run<SizeCommands>(args);
+    var app = ConsoleApp.Create();
+    app.Add<SizeCommands>();
+    await app.RunAsync(args);
     return;
 }
 

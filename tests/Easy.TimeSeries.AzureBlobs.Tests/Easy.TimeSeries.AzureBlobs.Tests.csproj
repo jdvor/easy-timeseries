@@ -3,6 +3,7 @@
     <ProjectReference Include="..\..\src\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="MartinCostello.Logging.XUnit.v3" />
     <PackageReference Include="Testcontainers.Azurite" />
   </ItemGroup>
 </Project>

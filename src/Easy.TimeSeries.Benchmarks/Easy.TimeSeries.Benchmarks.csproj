@@ -6,7 +6,10 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
-    <PackageReference Include="Cocona.Lite" />
+    <PackageReference Include="ConsoleAppFramework">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Parquet.Net" />
   </ItemGroup>
 

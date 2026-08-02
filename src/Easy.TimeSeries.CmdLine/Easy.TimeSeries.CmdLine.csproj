@@ -7,22 +7,39 @@
     <AssemblyName>ets</AssemblyName>
     <IsPublishable>true</IsPublishable>
     <IsPackable>true</IsPackable>
-    <IsTrimmable>true</IsTrimmable>
+    <IsTrimmable>false</IsTrimmable>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
+    <ProjectReference Include="..\Easy.TimeSeries.TestData\Easy.TimeSeries.TestData.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries.Parquet\Easy.TimeSeries.Parquet.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="readme.md" Pack="true" PackagePath="/"/>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.local.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cocona.Lite" />
+    <PackageReference Include="ConsoleAppFramework">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
 
 </Project>
