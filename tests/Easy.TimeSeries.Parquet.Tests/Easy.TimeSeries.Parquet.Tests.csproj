@@ -1,5 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <ItemGroup>
+    <PackageReference Include="Parquet.Net" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Easy.TimeSeries\Easy.TimeSeries.csproj" />
     <ProjectReference Include="..\..\src\Easy.TimeSeries.Parquet\Easy.TimeSeries.Parquet.csproj" />
   </ItemGroup>
+
 </Project>

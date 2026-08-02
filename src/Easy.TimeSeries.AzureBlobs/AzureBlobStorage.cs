@@ -1,30 +1,62 @@
-﻿namespace Easy.TimeSeries.AzureBlobs;
+namespace Easy.TimeSeries.AzureBlobs;
 
 using Abstractions;
+using Azure.Storage.Blobs;
 
-public sealed class AzureBlobStorage : IWriteStorage, IReadStorage
+/// <summary>
+/// Azure Blob backing for both writing and reading a serialized buffer. Writes stream to a single blob as columns are
+/// flushed; reads download the whole blob into memory. Dispose to release the underlying write stream.
+/// </summary>
+public sealed class AzureBlobStorage : IWriteStorage, IReadStorage, IAsyncDisposable
 {
-    private readonly string blobPath;
+    private readonly BlobClient blobClient;
+    private Stream? writeStream;
+    private bool disposed;
 
-    public AzureBlobStorage(string blobPath)
+    public AzureBlobStorage(BlobClient blobClient)
     {
-        this.blobPath = blobPath;
+        this.blobClient = blobClient;
     }
 
-    public Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        writeStream ??= await blobClient.OpenWriteAsync(overwrite: true, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        await writeStream.WriteAsync(data, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task CloseAsync(CancellationToken cancellationToken = default)
+    public async Task CloseAsync(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        if (writeStream is null)
+        {
+            return;
+        }
+
+        await writeStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        await writeStream.DisposeAsync().ConfigureAwait(false);
+        writeStream = null;
     }
 
-    public Task<ReadOnlyMemory<byte>> ReadAsync(CancellationToken cancellationToken)
+    public async Task<ReadOnlyMemory<byte>> ReadAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var response = await blobClient.DownloadContentAsync(cancellationToken).ConfigureAwait(false);
+        return response.Value.Content.ToMemory();
     }
 
-    public override string ToString() => blobPath;
+    public async ValueTask DisposeAsync()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        disposed = true;
+        if (writeStream is not null)
+        {
+            await writeStream.DisposeAsync().ConfigureAwait(false);
+            writeStream = null;
+        }
+    }
+
+    public override string ToString() => blobClient.Uri.ToString();
 }

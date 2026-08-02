@@ -13,18 +13,27 @@ public sealed class PathBuilder
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
     private readonly string root;
     private readonly TimeGranularity granularity;
+    private readonly string suffix;
     private readonly string dateFmt;
+    private readonly string nonSegmentedDateFmt;
     private readonly Regex rgx;
 
     /// <summary>Creates a builder rooted at <paramref name="root"/> that partitions by <paramref name="granularity"/>.</summary>
     /// <param name="suffix">File extension without the dot; defaults to <c>dat</c>.</param>
-    public PathBuilder(string root, TimeGranularity granularity, string suffix = "dat")
+    public PathBuilder(string root, TimeGranularity granularity, string suffix = "ts")
     {
         this.root = root;
         this.granularity = granularity;
+        this.suffix = suffix;
         dateFmt = GetDateTimeFormatString(granularity);
+        nonSegmentedDateFmt = GetNonSegmentedDateTimeFormatString(granularity);
         var pattern = GetPattern(root, granularity, suffix);
         rgx = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    }
+
+    public PathBuilder(TimeGranularity granularity)
+        : this(string.Empty, granularity)
+    {
     }
 
     private static string GetDateTimeFormatString(TimeGranularity granularity)
@@ -34,6 +43,18 @@ public sealed class PathBuilder
             TimeGranularity.Hour => "yyyy/MM/dd/HH",
             TimeGranularity.Day => "yyyy/MM/dd",
             TimeGranularity.Month => "yyyy/MM",
+            TimeGranularity.Year => "yyyy",
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    private static string GetNonSegmentedDateTimeFormatString(TimeGranularity granularity)
+    {
+        return granularity switch
+        {
+            TimeGranularity.Hour => "yyyyMMddHH",
+            TimeGranularity.Day => "yyyyMMdd",
+            TimeGranularity.Month => "yyyyMM",
             TimeGranularity.Year => "yyyy",
             _ => throw new NotImplementedException(),
         };
@@ -74,7 +95,7 @@ public sealed class PathBuilder
     }
 
     /// <summary>
-    /// Enumerates the partition paths covering <paramref name="fromUtcInclusive"/> to <paramref name="toUtcExclusive"/>,
+    /// Enumerate the partition paths covering <paramref name="fromUtcInclusive"/> to <paramref name="toUtcExclusive"/>,
     /// one per granularity bucket, plus their longest common path prefix (useful as a listing filter). Both bounds must
     /// be UTC and span at least one bucket.
     /// </summary>
@@ -116,6 +137,13 @@ public sealed class PathBuilder
         var prefix = GetPrefix(first, last);
 
         return (paths, prefix);
+    }
+
+    public string GetExpectedFilePath(DateTime fromUtcInclusive, string? fileName = null)
+    {
+        var path =  Path.Combine(root, fromUtcInclusive.ToString(dateFmt, Culture));
+        fileName ??= $"{fromUtcInclusive.ToString(nonSegmentedDateFmt, Culture)}.{suffix}";
+        return Path.Combine(path, fileName);
     }
 
     private IEnumerable<DateTime> GetDateTimeSequence(DateTime fromUtcInclusive)

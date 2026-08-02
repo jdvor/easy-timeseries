@@ -1,15 +1,16 @@
 namespace Easy.TimeSeries.Benchmarks;
 
-using Cocona;
+using ConsoleAppFramework;
 using Easy.TimeSeries.Benchmarks.Size;
 
 public sealed class SizeCommands
 {
-    [Command("size", Description = "Compare serialized size of test datasets: CSV vs Parquet (snappy) vs Easy.TimeSeries.")]
+    /// <summary>Compare serialized size of test datasets: CSV vs Parquet (snappy) vs Easy.TimeSeries.</summary>
+    /// <param name="datasets">Dataset names to measure; all datasets when omitted. See the 'list' command.</param>
+    /// <param name="output">-o, Path of the markdown report file.</param>
+    [Command("size")]
     public async Task<int> SizeAsync(
-        [Argument(Description = "Dataset names to measure; all datasets when omitted. See the 'list' command.")]
-        string[]? datasets = null,
-        [Option('o', Description = "Path of the markdown report file.")]
+        [Argument] string[]? datasets = null,
         string output = "artifacts/size-report.md")
     {
         var names = datasets is { Length: > 0 }
@@ -44,7 +45,8 @@ public sealed class SizeCommands
         return 0;
     }
 
-    [Command("list", Description = "List datasets available for the size comparison.")]
+    /// <summary>List datasets available for the size comparison.</summary>
+    [Command("list")]
     public void List()
     {
         foreach (var name in DatasetSizer.Names)
