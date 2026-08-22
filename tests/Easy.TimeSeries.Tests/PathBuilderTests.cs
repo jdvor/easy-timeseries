@@ -51,6 +51,20 @@ public class PathBuilderTests : IClassFixture<PathBuilderTests.Fixture>
         }
     }
 
+    [Theory]
+    [MemberData(nameof(AllHoursData))]
+    public void Parse_path_accepts_every_hour_of_the_day(int hour)
+    {
+        var pb = fixture.BuilderFor(TimeGranularity.Hour);
+        var path = $"{Root}/2023/06/09/{hour:D2}/AB01.ts";
+
+        var ok = pb.TryParse(path, out var time, out var subjectId);
+
+        Assert.True(ok, $"hour {hour:D2} did not parse");
+        Assert.Equal(new DateTime(2023, 6, 9, hour, 0, 0, DateTimeKind.Utc), time);
+        Assert.Equal("AB01", subjectId);
+    }
+
     [Fact]
     public void Builder_accepts_empty_root()
     {
@@ -68,10 +82,12 @@ public class PathBuilderTests : IClassFixture<PathBuilderTests.Fixture>
         var pb = new PathBuilder(TimeGranularity.Hour);
         var path = pb.GetExpectedFilePath(
             fromUtcInclusive: new DateTime(2026, 8, 2, 20, 32, 47, 895, DateTimeKind.Utc));
-        Assert.Equal("2026/08/02/20", path);
+        Assert.Equal("2026/08/02/20/2026080220.ts", path);
     }
 
     public static IEnumerable<object[]> ParsePathData => TestCases.Select(x => new object[] { x });
+
+    public static IEnumerable<object[]> AllHoursData => Enumerable.Range(0, 24).Select(h => new object[] { h });
 
     public static readonly TestCase[] TestCases = {
         TestCase.Ok(TimeGranularity.Day, $"{Root}/2023/12/17/AB01.ts", "2023-12-17", "AB01"),

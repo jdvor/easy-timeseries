@@ -38,7 +38,7 @@ jobs:
         run: ./scripts/check-vulnerabilities.sh
 
       - name: Execute tests
-        run: dotnet test -c Release --results-directory ./artifacts/trx --logger trx -v minimal --nologo
+        run: dotnet test -c Release --results-directory ./artifacts/trx --report-trx -v minimal
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action/composite@v2

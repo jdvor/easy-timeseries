@@ -6,5 +6,5 @@
     "methodDisplay": "method",
     "methodDisplayOptions": "all",
     "parallelizeAssembly": false,
-    "parallelizeTestCollections": true
+    "parallelMode": "collections"
 }

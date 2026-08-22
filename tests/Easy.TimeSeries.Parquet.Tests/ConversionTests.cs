@@ -73,7 +73,7 @@ public class ConversionTests
         Assert.Equal(typeof(long), byName["Big"]);
         Assert.Equal(typeof(bool), byName["Flag"]);
         Assert.Equal(typeof(float), byName["Approx"]);
-        Assert.Equal(typeof(string), byName["Fuel"]);
+        Assert.Equal(typeof(ReadOnlyMemory<char>), byName["Fuel"]);
     }
 
     [Fact]
