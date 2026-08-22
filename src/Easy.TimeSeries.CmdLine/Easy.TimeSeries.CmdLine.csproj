@@ -8,6 +8,7 @@
     <IsPublishable>true</IsPublishable>
     <IsPackable>true</IsPackable>
     <IsTrimmable>false</IsTrimmable>
+    <Description>Command-line tool (ets) for inspecting, converting, and debugging Easy.TimeSeries files.</Description>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 

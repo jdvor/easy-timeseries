@@ -3,11 +3,16 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
-    <Description>...</Description>
+    <Description>Public contracts for Easy.TimeSeries: column attributes, IMaterializer&lt;T&gt;, and precision enums used to describe DTOs.</Description>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Memory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>
