@@ -40,6 +40,9 @@ jobs:
         if: inputs.skip_tests == 'false' || inputs.skip_tests == '0' || inputs.skip_tests == ''
         run: dotnet test -c Release -v minimal
 
+      - name: Validate NuGet packages
+        run: ./scripts/validate-nuget-packages.sh
+
       - name: Determine semantic version
         id: semver
         uses: paulhatch/semantic-version@v6.0.2
@@ -47,7 +50,8 @@ jobs:
           tag_prefix: ""
           # Breaking change if the body contains "BREAKING CHANGE", or a conventional-commit header uses "!" before the colon (e.g. "feat!:", "fix(api)!:").
           major_pattern: "/(BREAKING CHANGE|(^|\\n)[a-z]+(\\([^)]+\\))?!:)/"
-          minor_pattern: "feat:"
+          # Minor bump on a feature commit, with or without a scope (e.g. "feat:", "feat(api):").
+          minor_pattern: "/(^|\\n)feat(\\([^)]+\\))?:/"
           search_commit_body: true
           version_format: "${major}.${minor}.${patch}"
 

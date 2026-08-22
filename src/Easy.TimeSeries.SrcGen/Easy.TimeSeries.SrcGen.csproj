@@ -2,7 +2,9 @@
 
 <PropertyGroup>
   <TargetFramework>netstandard2.0</TargetFramework>
-  <Description>...</Description>
+  <IsPackable>true</IsPackable>
+  <Description>Roslyn incremental generator that emits typed writers/readers for DTOs annotated with [GenerateWriter]/[GenerateReader].</Description>
+  <PackageReadmeFile>readme.md</PackageReadmeFile>
   <IsRoslynComponent>true</IsRoslynComponent>
   <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -11,6 +13,7 @@
 
 <ItemGroup>
   <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  <None Include="readme.md" Pack="true" PackagePath="/" />
 </ItemGroup>
 
 <ItemGroup>

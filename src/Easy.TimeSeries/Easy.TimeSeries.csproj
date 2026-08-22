@@ -2,11 +2,16 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <Description>...</Description>
+    <Description>Columnar time-series storage with delta, delta-of-delta, XOR, and dictionary compression for compact, fast reads and writes.</Description>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Easy.TimeSeries.Abstractions\Easy.TimeSeries.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

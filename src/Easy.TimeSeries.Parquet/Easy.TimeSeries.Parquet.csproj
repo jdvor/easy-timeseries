@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <IsPackable>true</IsPackable>
-    <Description>...</Description>
+    <Description>Converts Easy.TimeSeries columnar buffers to Apache Parquet files via Parquet.Net.</Description>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +12,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="readme.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>
