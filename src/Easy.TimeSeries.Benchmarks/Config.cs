@@ -9,7 +9,12 @@ using System.Globalization;
 
 public class Config : ManualConfig
 {
-    public Config(string? outputPath = null)
+    /// <param name="outputPath">Artifacts directory; a dated sub-directory of 'artifacts/' when omitted.</param>
+    /// <param name="quick">
+    /// When true (default), trims the job down to a faster run with less statistical confidence.
+    /// Pass false for the standard BenchmarkDotNet job when a result needs to be pinned precisely.
+    /// </param>
+    public Config(string? outputPath = null, bool quick = true)
     {
         var path = GetAndEnsureOutputPath(outputPath);
 
@@ -24,12 +29,14 @@ public class Config : ManualConfig
         AddColumnProvider(DefaultColumnProviders.Instance);
         AddExporter(new FlatMarkdownExporter());
 
-        // Trim the default job (adaptive warmup + 15 measured iterations) down to a faster, still-usable run.
-        // Loosen back up (or drop this job) when a result needs to be pinned precisely.
-        AddJob(Job.Default
-            .WithLaunchCount(1)
-            .WithWarmupCount(3)
-            .WithIterationCount(5));
+        // Quick mode trims the default job (adaptive warmup + 15 measured iterations) down to a faster,
+        // still-usable run; standard mode keeps BenchmarkDotNet's own defaults.
+        AddJob(quick
+            ? Job.Default
+                .WithLaunchCount(1)
+                .WithWarmupCount(3)
+                .WithIterationCount(5)
+            : Job.Default);
     }
 
     private static string GetAndEnsureOutputPath(string? outputPath = null)
