@@ -1,0 +1,85 @@
+name: 'Benchmarks'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: What to run
+        required: false
+        type: choice
+        options: ['all', 'size-only', 'bench-only']
+        default: 'all'
+      filter:
+        description: BenchmarkDotNet filter pattern for micro-benchmarks (ignored for size-only)
+        required: false
+        type: string
+        default: '*'
+      precision:
+        description: Micro-benchmark job - quick (fewer iterations) or full (BenchmarkDotNet defaults)
+        required: false
+        type: choice
+        options: ['quick', 'full']
+        default: 'quick'
+
+jobs:
+  benchmarks:
+    name: 'Run Benchmarks'
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.300
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: /home/runner/.nuget/packages
+          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: packages-${{ runner.os }}-
+
+      - name: Run benchmarks
+        id: run
+        run: |
+          mode_flag=''
+          if [ "${{ inputs.mode }}" = 'size-only' ]; then mode_flag='--size-only'; fi
+          if [ "${{ inputs.mode }}" = 'bench-only' ]; then mode_flag='--bench-only'; fi
+          precision_flag=''
+          if [ "${{ inputs.precision }}" = 'full' ]; then precision_flag='--full'; fi
+          ./scripts/run-benchmarks.sh $mode_flag $precision_flag --filter "${{ inputs.filter }}"
+          run_id="$(date -u +%F)-$(git rev-parse --short=7 HEAD)"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request with results
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id="${{ steps.run.outputs.run_id }}"
+          branch_name="perf-results/$run_id"
+          base_branch="${{ github.ref_name }}"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+          git checkout -b "$branch_name"
+          git add "performance-results/$run_id"
+          git commit -m "chore: add benchmark results for $run_id"
+          git push --force origin "$branch_name"
+
+          if gh pr view "$branch_name" --json state -q .state >/dev/null 2>&1; then
+            echo "PR for $branch_name already exists; skipping creation"
+          else
+            gh pr create \
+              --base "$base_branch" \
+              --head "$branch_name" \
+              --title "Benchmark results: $run_id" \
+              --body "Automated benchmark run (mode: ${{ inputs.mode }}, precision: ${{ inputs.precision }}, filter: \`${{ inputs.filter }}\`). Review before merging - shared runner timings can be noisy."
+          fi

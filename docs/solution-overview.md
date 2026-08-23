@@ -30,4 +30,7 @@
 
 ## Easy.TimeSeries.Benchmarks
 
+Size comparison and micro-benchmarks, runnable locally or via the `Benchmarks` GitHub Actions workflow.
+See [Benchmarking](benchmarking.md).
+
 ## Easy.Sample

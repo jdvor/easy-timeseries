@@ -4,5 +4,6 @@
 - [Data Layout Details](docs/layout.md)
 - [Source Generation](docs/source-generation.md)
 - [Parquet Conversion](docs/parquet-conversion.md)
+- [Benchmarking](docs/benchmarking.md)
 - [Code Style](docs/code-style.md)
 - [Markdown Examples](docs/markdown-examples.md)

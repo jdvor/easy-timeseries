@@ -13,7 +13,14 @@ if (args.Length > 0 && customCommands.Contains(args[0], StringComparer.OrdinalIg
     return;
 }
 
-var config = new Config();
+// '--quick' (default) and '--full' are ours, not BenchmarkDotNet's, so they have to be removed from the
+// argument list before it is handed over - an unknown switch makes BenchmarkDotNet's parser bail out.
+var quick = !args.Contains("--full", StringComparer.OrdinalIgnoreCase);
+args = [.. args.Where(a =>
+    !a.Equals("--quick", StringComparison.OrdinalIgnoreCase)
+    && !a.Equals("--full", StringComparison.OrdinalIgnoreCase))];
+
+var config = new Config(quick: quick);
 if (args.Length == 0)
 {
     args = ["--filter", "*"];
