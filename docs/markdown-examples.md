@@ -1,7 +1,7 @@
 # Markdown Examples
 
 Reference page for formatting and visualization features available in this mdbook.
-Plugins installed: `mdbook-toc`, `mdbook-mermaid`, `mdbook-admonish`, `mdbook-variables`.
+Plugins installed: `mdbook-toc`, `mdbook-mermaid`.
 
 <!-- toc -->
 
@@ -83,66 +83,6 @@ dotnet test tests/Easy.TimeSeries.Tests/ -c Release --nologo
 | `decimal`         | `AddScaled32`     | `ReadScaled32`      | `decimalPlaces` in meta      |
 | `bool`            | `AddBool`         | `ReadBool`          |                              |
 | `string`          | `AddCategory`     | `ReadCategory`      | Dictionary-encoded           |
-
----
-
-## Admonitions (`mdbook-admonish`)
-
-```admonish note
-Default note block. Use for supplementary context that is worth capturing but not critical.
-```
-
-```admonish tip
-Use `ArrayPool<T>.Shared` on hot write paths to avoid per-record allocations.
-```
-
-```admonish info title="Epoch"
-The timestamp encoder uses a fixed epoch of **2000-01-01 UTC** and stores values in
-the smallest precision that fits the column's declared `TimePrecision`. The 41-bit
-ceiling limits the maximum storable timestamp to roughly year 2069 at millisecond
-precision.
-```
-
-```admonish warning
-`BitWriter.CommitRecord()` must be called **exactly once per logical entry** by every
-domain writer. Skipping it corrupts `ColumnHeader.Records` and breaks the reader.
-```
-
-```admonish danger title="Do not call on the hot path"
-`ReflectionBasedMaterializer` uses compiled `Expression`-based setters. The first call
-per type compiles and caches the delegate. Calling the constructor on every read will
-re-compile every time and cause severe throughput degradation.
-```
-
-```admonish bug
-Scaled numbers read as zero when `ColumnInfo.Meta` is missing the `decimalPlaces` field
-because both writer and reader derive the scale factor from it. Missing meta defaults to
-`0`, giving a scale of `1` — which truncates all fractional values.
-```
-
-```admonish example
-Round-trip a `PowerPlant` DTO through in-memory storage:
-
-```csharp
-var storage = new InMemoryStorage();
-using (var w = new Writer(storage, granularity: TimeGranularity.Hour))
-{
-    w.AddTime(0, TimePrecision.Second);
-    w.AddFloat(1);
-    await w.FlushAsync(timestamp);
-}
-var records = await new ReadBuilder(storage)
-    .Build<PowerPlant>(timestamp)
-    .ToListAsync();
-```
-```
-
-```admonish quote title="Design goal"
-"Low-level columnar APIs stay easy to use directly. Higher-level conveniences sit on top
-in a use-it-or-ignore-it fashion — never make them mandatory."
-```
-
----
 
 ## Diagrams (`mdbook-mermaid`)
 
@@ -235,26 +175,10 @@ graph TD
     Sample --> Core
 ```
 
----
-
-## Variables (`mdbook-variables`)
-
-The following values are injected from `book.toml` at build time:
-
-| Variable          | Value rendered here                  |
-|-------------------|--------------------------------------|
-| `author_name`     | {{author_name}}                      |
-| `author_email`    | {{author_email}}                     |
-| `copyright`       | {{copyright}}                        |
-
----
-
 ## Links and References
 
 - [mdbook documentation](https://rust-lang.github.io/mdBook/)
-- [mdbook-admonish](https://github.com/tommilligan/mdbook-admonish)
 - [mdbook-mermaid](https://github.com/badboy/mdbook-mermaid)
 - [mdbook-toc](https://github.com/badboy/mdbook-toc)
-- [mdbook-variables](https://gitlab.com/tglman/mdbook-variables)
 
 Internal cross-references: [Layout details](layout.md), [Code style](code-style.md).

@@ -8,6 +8,9 @@ local.settings.json
 # some mdbook pre-processors download js and css
 docs/assets/vendor/
 
+# mdbook build output (build-dir in docs/book.toml)
+/site/
+
 
 ### Git ###
 *.orig
