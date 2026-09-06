@@ -19,6 +19,17 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      # Preflight - fail before doing any work. This workflow tags the repo and pushes to nuget.org,
+      # and neither is undoable, so a mis-dispatch from a feature branch must not get as far as checkout.
+      # Deliberately a failure rather than a skip: a green run that published nothing is worse than a red one.
+      - name: Refuse to publish from a non-default branch
+        if: github.ref != 'refs/heads/master'
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          echo "::error title=Wrong branch::publish.yml must be dispatched from master, got $REF"
+          exit 1
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:

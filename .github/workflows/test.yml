@@ -1,8 +1,7 @@
 name: 'Test'
 
 permissions:
-  actions: read
-  contents: write
+  contents: read
   checks: write
   pull-requests: write
 
