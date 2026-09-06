@@ -18,7 +18,4 @@ public enum DateTimePrecision
 
     /// <summary>Day resolution.</summary>
     Days,
-
-    /// <summary>Year resolution.</summary>
-    Years,
 }
