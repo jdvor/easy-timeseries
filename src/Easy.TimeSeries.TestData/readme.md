@@ -2,7 +2,7 @@
 
 Test data are used in unit tests and benchmarks.
 
-## tests/data/power_plans.csv
+## tests/data/power_plants.csv
 
 ```
 country,capacity_mw,latitude,longitude,primary_fuel,,,
@@ -48,7 +48,7 @@ AFG,22,34.5865,69.7757,Hydro,,,
 7.95120715647297,2.35,4.95253502508524,3.786667
 ```
 
-## tests/data/Gold.
+## tests/data/Gold.csv
 
 ```
 "DATE","VALUE"
