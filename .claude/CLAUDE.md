@@ -26,16 +26,19 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.Abstractions` | implemented | Stable contracts for external consumers: `ColumnAttribute`, `IMaterializer<T>`, `DataValueType`, precision enums.          |
 | `src/Easy.TimeSeries`              | implemented | Core library. Bit-level encoders/decoders, `Header`, `Writer`, `ReadBuilder`, `ReflectionBasedMaterializer`, storage.      |
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
-| `src/Easy.TimeSeries.AzureBlobs`   | skeleton    | One placeholder `Class1.cs`. To mirror local-file storage in Azure Blobs.                                                  |
+| `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage) and `AzureBlobStorageFactory`, which maps a time bucket to a blob path via `PathBuilder`. |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
-| `src/Easy.TimeSeries.CmdLine`      | scaffolding | Debugging/conversion CLI built on `ConsoleAppFramework`. Sandbox-quality.                                                   |
-| `src/Easy.TimeSeries.Benchmarks`   | sandbox     | `BenchmarkDotNet` harness; rough benchmarks for buffer sizing etc. Treat as scratch space until critical paths are pinned. |
+| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ts`, `ref-files-parquet`, `convert-to-parquet`.                     |
+| `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
+| `src/Easy.TimeSeries.TestData`     | implemented | Re-usable sample datasets (Boeing, Gold, Vix, Macro4, PowerPlant) shared by tests and benchmarks.                          |
 | `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |
-| `tests/Easy.TimeSeries.Tests`      | implemented | xUnit v3 tests for the core library. Good coverage for bit-level writers/readers and the DTO round-trip.                   |
+| `tests/Easy.TimeSeries.Tests`      | implemented | xUnit v3 tests for the core library: bit-level writers/readers, DTO round-trip, storage, and golden format fixtures.       |
 | `tests/Easy.TimeSeries.SrcGen.Tests` | implemented | `CSharpGeneratorDriver`-based tests for the generator: generated-code shape, ETS diagnostics, incrementality.            |
+| `tests/Easy.TimeSeries.Parquet.Tests` | implemented | Conversion tests for `TsToParquetConverter`, including native type mapping.                                             |
+| `tests/Easy.TimeSeries.AzureBlobs.Tests` | implemented | Integration tests against a real Azurite container via Testcontainers; needs Docker to run.                          |
 
-Skeleton/scaffolding projects exist on purpose to reserve names and references; do not treat them as "broken" -
-they are future work.
+Every project in the solution has a working implementation. The one deliberate feature gap is the reverse Parquet
+direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
 
 ## Core library layout (`src/Easy.TimeSeries/`)
 
@@ -96,7 +99,16 @@ Read these before touching anything in `Internal/`:
 - Central package management: `Directory.Packages.props` (`ManagePackageVersionsCentrally=true`, no
   `EnablePackageVersionOverride`). Do not put `Version=` on `<PackageReference>` in csproj files.
 - Build: `dotnet build`.
-- Tests: `dotnet test tests/Easy.TimeSeries.Tests/Easy.TimeSeries.Tests.csproj -c Release -v minimal --nologo 2>&1`.
+- Tests: `DOTNET_NOLOGO=1 dotnet test -c Release` for everything, or add
+  `--project tests/Easy.TimeSeries.Tests/Easy.TimeSeries.Tests.csproj` for one project.
+- **This repo runs Microsoft.Testing.Platform**, not VSTest (`global.json` sets `test.runner`). VSTest-only options
+  (`--nologo`, `--logger`, `--filter`, `--collect`, `--blame`, `--settings`) are forwarded to the test app, which
+  rejects them and exits **before discovery**. The symptom is misleading - `Zero tests ran` with exit code 5, which
+  means *invalid arguments*, not an empty run (that would be exit code 8). Suppress the banner with the
+  `DOTNET_NOLOGO=1` environment variable; filter with xunit v3's own `--filter-class` / `--filter-method` after a
+  literal `--`.
+- Golden format fixtures live in `tests/data/golden/v1`. Regenerate **only** for a deliberate format change:
+  `./scripts/regen-golden.sh`, then review the diff.
 - Benchmarks: `dotnet run -c Release --project src/Easy.TimeSeries.Benchmarks`.
 - CI: `.github/workflows/test.yml` runs on push/PR (paths-ignore for docs/scripts). `.github/workflows/publish.yml` is
   `workflow_dispatch` only; semantic version is derived from conventional commit prefixes (`feat:`, `BREAKING CHANGE:`)

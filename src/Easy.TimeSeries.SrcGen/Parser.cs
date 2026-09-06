@@ -11,7 +11,7 @@ using System.Globalization;
 internal static class Parser
 {
     /// <summary>Member names shared by DateTimePrecision, TimeSpanPrecision and core TimePrecision.</summary>
-    private static readonly string[] TimePrecisionNames = ["Milliseconds", "TenthsOfSecond", "Seconds", "Days", "Years"];
+    private static readonly string[] TimePrecisionNames = ["Milliseconds", "TenthsOfSecond", "Seconds", "Days"];
 
     private const int DefaultDateTimePrecision = 0; // Milliseconds
     private const int DefaultTimeSpanPrecision = 2; // Seconds

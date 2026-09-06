@@ -18,24 +18,31 @@ The following techniques are used in the library:
 
 - Data-agnostic compression:
   - Dictionary compression
+  - Brotli over the raw values, for columns whose values are uncorrelated row to row
 
 [Here][tscae] is an easy read on those techniques.
 
 Supported data types in columnar storage:
 
-- `Boolean`
-- `Int32`
-- `Int64`
-- `Double`
-- `Float`
-- `DateTime`
-- `TimeSpan`
-- `String` (low cardinality value mapped to an integer through a dictionary)
+| Type       | Notes                                                                            |
+| ---------- | -------------------------------------------------------------------------------- |
+| `Boolean`  | Bit-packed, one bit per value                                                    |
+| `Int32`    | Delta / XOR encoded; a `Random` variant stores uncorrelated values raw + Brotli  |
+| `Int64`    | As `Int32`                                                                       |
+| `Float`    | XOR-delta ("Gorilla"); a `Random` variant for uncorrelated values                |
+| `Double`   | As `Float`                                                                       |
+| `Decimal`  | Stored exactly, no precision loss                                                |
+| `DateTime` | Delta-of-delta when ascending, full-width otherwise; selectable precision        |
+| `TimeSpan` | Selectable precision                                                             |
+| `String`   | Low-cardinality values mapped to an integer through a dictionary                 |
+
+Real numbers can also be stored as a fixed-point *scaled number* (`ScaledNumber32` / `ScaledNumber64`), which
+quantizes to a set number of decimal places. It is usually the smallest option, and the only lossy one - every
+other encoding round-trips exactly. See [Getting started](docs/introduction.md) for how to choose per column.
 
 ## Users
 
 - [Getting started](docs/introduction.md)
-- [Roadmap](docs/roadmap.md)
 - [How the library is licensed](docs/license.md)
 - [How to report security issues](SECURITY.md)
 
@@ -45,5 +52,6 @@ Supported data types in columnar storage:
 - [Solution Overview](docs/solution-overview.md)
 - [Data Layout Details](docs/layout.md)
 - [Code Style](docs/code-style.md)
+- [Benchmarking](docs/benchmarking.md)
 
 [tscae]: https://www.tigerdata.com/blog/time-series-compression-algorithms-explained

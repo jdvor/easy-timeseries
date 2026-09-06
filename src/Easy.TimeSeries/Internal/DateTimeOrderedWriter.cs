@@ -27,6 +27,7 @@ internal sealed class DateTimeOrderedWriter
         Expect.Utc(value);
 
         var timestamp = GetTimeStamp(value);
+        EnsureRepresentable(timestamp, value);
         EnsureIncreasingTime(timestamp);
 
         if (!hasStoredFirstValue)
@@ -57,6 +58,26 @@ internal sealed class DateTimeOrderedWriter
         prevTimeStamp = timestamp;
         prevTimeStampDelta = delta;
         bitWriter.CommitRecord();
+    }
+
+    /// <summary>
+    /// The timestamp field is <see cref="MaxBits"/> bits wide, so a value past that ceiling would be truncated by
+    /// the bit writer and read back as a plausible but wrong instant. Fail loudly instead.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void EnsureRepresentable(long timestamp, DateTime value)
+    {
+        if (timestamp is < 0 or > MaxTimeStamp)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(value),
+                value,
+                "DateTimeOrdered columns store the timestamp in a "
+                + MaxBits
+                + "-bit field counted from " + "2000-01-01T00:00:00Z, so the value is out of range at this "
+                + "precision. Use a coarser TimePrecision, or AddTimeUnordered (DateTimeUnordered), which stores "
+                + "the full value.");
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -93,6 +114,9 @@ internal sealed class DateTimeOrderedWriter
     {
         return precision switch
         {
+            // Coarser units yield smaller deltas, so they need less room. Days used to fall into the catch-all
+            // and request the millisecond-sized buffer despite producing the smallest output of any precision.
+            TimePrecision.Days => valueCount,
             TimePrecision.Seconds => (int)(valueCount * 1.5),
             TimePrecision.TenthsOfSecond => valueCount * 2,
             _ => valueCount * 3,

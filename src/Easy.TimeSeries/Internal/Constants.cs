@@ -54,9 +54,18 @@ internal static class Constants
         public const long DeltaMaxValue3 = 1L << (DeltaBits3 - 1);
         public const ulong DeltaPrefix3 = 0b10;
 
-        public const int DeltaBits4 = 32;
+        // Widest bucket, and the catch-all: Encode routes here whatever the narrower three cannot hold, so it
+        // must cover the worst case outright. Timestamps span [0, 2^41-1], so a delta is in the same range and a
+        // delta-of-delta lands in [-(2^41-1), 2^41-1] - 42 bits signed. It was 32, which silently truncated any
+        // delta-of-delta past +/-2^31: about 24.9 days at millisecond precision. The extra 10 bits are only ever
+        // paid by values that reach this bucket, which regular sampling almost never does (measured at +8 bytes
+        // across the five datasets in the size report).
+        public const int DeltaBits4 = 42;
         public const long DeltaMaxValue4 = 1L << (DeltaBits4 - 1);
         public const ulong DeltaPrefix4 = 0b11;
+
+        /// <summary>Largest timestamp the <see cref="MaxBits"/>-wide field can hold, in precision units.</summary>
+        public const long MaxTimeStamp = (1L << MaxBits) - 1;
 
         public static readonly DateTime Epoch = new(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     }

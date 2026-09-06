@@ -91,13 +91,33 @@ Timestamps are the biggest lever. Two decisions:
    - When your data is sorted, saying so is free size. When it is not, `AddTimeOrdered` will throw - do not "promise"
      ordering you do not have.
 
-2. **Precision** - pick the coarsest that is still correct: `Milliseconds`, `TenthsOfSecond`, `Seconds`, `Days`, `Years`.
-   Coarser precision means smaller deltas and fewer bits. Storing per-day data at `Milliseconds` wastes space.
+2. **Precision** - pick the coarsest that is still correct: `Milliseconds`, `TenthsOfSecond`, `Seconds`, `Days`.
+   Coarser units make the deltas smaller, so they normally cost fewer bits - storing per-day data at
+   `Milliseconds` wastes space. Measured on the bundled datasets, going from `Milliseconds` to `Days` takes the
+   Boeing trade timestamps from 250,765 to 28,077 bytes.
 
-Epoch constraints to know: the format's epoch is `2000-01-01T00:00:00Z`. `AddTimeOrdered` has a 41-bit ceiling (about
-year 2069 at millisecond precision) and cannot represent instants **before** the epoch - such values look "unsorted" and
-are rejected. `AddTimeUnordered` has neither limit (it stores a full 64-bit value) and is the escape hatch for
-pre-2000 or far-future timestamps.
+   One case inverts this. If your samples are *exactly* evenly spaced and the interval is not a whole multiple of
+   the coarser unit, truncation turns a constant delta into an alternating one-unit jitter, and a column that cost
+   a single bit per row starts paying a bucket prefix plus a payload. A series spaced exactly `1d 7m 137ms` apart
+   grows from 101 bytes at `Milliseconds` to 325 at `TenthsOfSecond`. Real-world sampling is rarely that exact -
+   all five bundled datasets shrink monotonically as precision coarsens - but if yours is, measure before
+   coarsening.
+
+Epoch constraints to know: the format's epoch is `2000-01-01T00:00:00Z`. `AddTimeOrdered` has a 41-bit ceiling and
+cannot represent instants **before** the epoch - such values look "unsorted" and are rejected. Both limits are
+enforced: a value outside the representable window throws `ArgumentOutOfRangeException` rather than being stored
+incorrectly. The ceiling moves with the precision you choose:
+
+| Precision        | Latest representable instant       |
+| ---------------- | ---------------------------------- |
+| `Milliseconds`   | 2069-09-06                         |
+| `TenthsOfSecond` | ~8968                              |
+| `Seconds`        | beyond `DateTime.MaxValue`         |
+| `Days`           | beyond `DateTime.MaxValue`         |
+
+`AddTimeUnordered` has neither limit - it stores a full 64-bit value - and is the escape hatch for pre-2000 or
+far-future timestamps. Gap size is not a constraint: an ordered column round-trips arbitrarily long gaps between
+consecutive samples, so a sensor that goes offline for months still belongs in `AddTimeOrdered`.
 
 ### Durations (`TimeSpan`)
 

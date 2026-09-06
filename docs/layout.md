@@ -177,7 +177,21 @@ otherwise). Timestamps are normalized against a fixed epoch of `2000-01-01T00:00
 stored as the *change in the interval between consecutive values* (delta-of-delta). Regularly-sampled series - the
 common case - have a near-constant interval, so most values cost a single bit; irregular gaps fall back to progressively
 wider fixed-width buckets. At millisecond precision the normalized timestamp is capped at 41 bits, reaching roughly
-`2069-09-06T15:47:35Z`.
+`2069-09-06T15:47:35Z`; a value past that ceiling is rejected rather than truncated.
+
+Each non-zero delta-of-delta is written as a 2-bit bucket prefix followed by a fixed-width signed payload:
+
+| Prefix | Payload bits | Holds delta-of-delta        |
+| ------ | ------------ | --------------------------- |
+| `00`   | 3            | +/-2^2                      |
+| `01`   | 7            | +/-2^6                      |
+| `10`   | 12           | +/-2^11                     |
+| `11`   | 42           | anything else, up to +/-2^41 |
+
+The widest bucket is the catch-all, so it has to cover the worst case outright: with timestamps spanning
+`[0, 2^41-1]`, a delta-of-delta lands in `[-(2^41-1), 2^41-1]`, which needs 42 signed bits. It was 32 bits, which
+silently truncated any gap whose delta-of-delta passed +/-2^31 - about 24.9 days at millisecond precision. Only
+values that actually reach this bucket pay the extra 10 bits, and regular sampling rarely does.
 
 ### `DateTimeUnordered` (absolute, XOR)
 

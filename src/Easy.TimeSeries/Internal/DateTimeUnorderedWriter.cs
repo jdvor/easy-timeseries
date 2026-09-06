@@ -33,6 +33,9 @@ internal sealed class DateTimeUnorderedWriter
     {
         return precision switch
         {
+            // Coarser units yield smaller absolute values, so they need less room. Days used to fall into the
+            // catch-all and request the millisecond-sized buffer.
+            TimePrecision.Days => valueCount * 2,
             TimePrecision.Seconds => valueCount * 3,
             TimePrecision.TenthsOfSecond => valueCount * 4,
             _ => valueCount * 5,

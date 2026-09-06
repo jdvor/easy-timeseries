@@ -28,11 +28,11 @@ Open a GitHub Issue with the `enhancement` label. Describe the use case and why 
 
 ### Submitting a Pull Request
 
-1. Fork the repository and create a branch from `main` (or the default branch).
+1. Fork the repository and create a branch from `master`.
 2. Make your changes. Keep commits focused and descriptive.
 3. If applicable, add or update tests.
 4. Update documentation or the README if your change affects public-facing behavior.
-5. Open a pull request with a clear title and description of what you changed and why.
+5. Open a pull request with a clear title and description of what you have changed and why.
 
 ## Code Style
 

@@ -27,6 +27,9 @@ internal sealed class TimeSpanWriter
     {
         return precision switch
         {
+            // Coarser units yield smaller deltas, so they need less room. Days used to fall into the catch-all
+            // and request the millisecond-sized buffer despite producing the smallest output of any precision.
+            TimePrecision.Days => valueCount,
             TimePrecision.Seconds => (int)(valueCount * 1.5),
             TimePrecision.TenthsOfSecond => valueCount * 2,
             _ => valueCount * 3,

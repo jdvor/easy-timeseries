@@ -81,3 +81,31 @@ var options = new ParquetConversionOptions
 };
 await TsToParquetConverter.ConvertAsync(source, output, options);
 ```
+
+## Planned: `parquet -> ets`
+
+Only the `ets -> parquet` direction is implemented. The reverse is intentionally deferred rather than half-built,
+because it needs three design decisions that the forward direction never has to make - the time-series header is
+self-describing, a Parquet schema is not.
+
+**Null handling.** Parquet columns are nullable by default and the ets format has no null slot. The options are to
+reject a column containing nulls, or to substitute a documented per-type default and record that the column was
+lossy. Silently writing zeros would be the worst of both.
+
+**Encoding selection.** This is the hard one. Parquet carries no equivalent of the hints that make ets compress
+well:
+
+| ets needs to know       | Parquet tells us | Consequence                                                       |
+| ----------------------- | ---------------- | ----------------------------------------------------------------- |
+| Timestamps ascending?   | no               | Cannot choose between `AddTimeOrdered` and `AddTimeUnordered`     |
+| Decimal places          | scale, sometimes | Cannot pick `ScaledNumber` precision reliably                     |
+| Values correlated?      | no               | Cannot choose between the default and the `Random` distribution   |
+
+Either the converter scans the data first and infers these (costly, and a wrong guess is silently expensive), or
+the caller supplies a column mapping, which makes the API considerably less convenient than the forward direction.
+
+**Logical type coverage.** Parquet has substantially more logical types than ets has column types. The mapping
+table above must gain a documented inverse, including which types are rejected outright.
+
+Until those are settled, treat Parquet as an export target: ingestion goes through `Writer`, where the encoding
+hints are explicit.
