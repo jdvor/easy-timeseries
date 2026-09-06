@@ -115,7 +115,9 @@ internal sealed class DateTimeSeriesBuilder
         var match = IntervalRgx.Match(s);
         if (!match.Success)
         {
-            throw new Exception();
+            throw new FormatException(
+                $"Cannot parse '{s}' as an interval. Expected a TimeSpan (e.g. 00:15:00) " +
+                "or <number><unit> where unit is d, h, m, s or ms.");
         }
 
         var value = int.Parse(match.Groups["val"].Value);
@@ -127,7 +129,7 @@ internal sealed class DateTimeSeriesBuilder
             "m" => new TimeSpan(0, 0, value, 0),
             "s" => new TimeSpan(0, 0, 0, value),
             "ms" => new TimeSpan(0, 0, 0, 0, value),
-            _ => throw new Exception(),
+            _ => throw new FormatException($"Unknown interval unit '{unit}' in '{s}'."),
         };
     }
 
