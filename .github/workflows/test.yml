@@ -78,3 +78,32 @@ jobs:
       - name: Add coverage to job summary
         if: (!cancelled())
         run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+  # Companion to the `if:` on `test` above - the two conditions are exact inverses and must be
+  # kept in sync. Its only purpose is to make the skipped `Test` job self-explanatory in the UI.
+  explain-skip:
+    name: 'Test skipped (already run on the PR)'
+    runs-on: ubuntu-22.04
+    permissions: {}
+    if: ${{ github.event_name == 'push' && startsWith(github.event.head_commit.message, 'Merge pull request') }}
+
+    steps:
+      - name: Explain why Test was skipped
+        env:
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          pr=$(printf '%s' "$HEAD_COMMIT_MESSAGE" | head -1 | sed -n 's/^Merge pull request #\([0-9]\{1,\}\).*/\1/p')
+          if [ -n "$pr" ]; then ref="pull request #$pr"; else ref="the pull request"; fi
+
+          echo "::notice title=Test skipped by design::Tests for this merge commit already ran on ${ref}. This is not a failure."
+
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Test skipped by design
+
+          The \`Test\` job is greyed out on this run **on purpose** - it is not an error and nothing went wrong.
+
+          This commit is the merge of ${ref}. Branch protection on \`master\` requires a passing \`Test\` check and
+          an up-to-date branch, and merges use a merge commit. That means the \`pull_request\` run tested
+          \`refs/pull/N/merge\` - the exact tree this merge commit has. Re-running it here would test nothing new.
+
+          Direct pushes to \`master\` (admin bypass) are **not** skipped and still run the full suite.
+          EOF
