@@ -22,11 +22,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
     <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-    <InternalsVisibleTo Include="$(AssemblyName).IntegrationTests" />
     <InternalsVisibleTo Include="Easy.TimeSeries.Benchmarks" />
     <InternalsVisibleTo Include="Easy.TimeSeries.CmdLine" />
   </ItemGroup>

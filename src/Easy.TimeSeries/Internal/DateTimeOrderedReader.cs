@@ -64,14 +64,4 @@ internal ref struct DateTimeOrderedReader
             _ => throw new ArgumentException("...", nameof(prefix)),
         };
     }
-
-    public static uint GetSizeHint(int valueCount, TimePrecision precision)
-    {
-        return precision switch
-        {
-            TimePrecision.Seconds => (uint)(valueCount * 1.5),
-            TimePrecision.TenthsOfSecond => (uint)valueCount * 2,
-            _ => (uint)valueCount * 3,
-        };
-    }
 }

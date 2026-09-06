@@ -25,7 +25,8 @@ public sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
     {
         if (closed)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException(
+                "Cannot write to storage that has already been closed.");
         }
 
         var span = buffer.GetMemory(data.Length);
@@ -44,7 +45,8 @@ public sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
     {
         if (buffer.WrittenCount == 0)
         {
-            throw new InvalidOperationException();
+            throw new InvalidOperationException(
+                "Cannot read from storage before anything has been written to it.");
         }
 
         return Task.FromResult(buffer.WrittenMemory);

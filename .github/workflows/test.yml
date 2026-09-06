@@ -8,15 +8,22 @@ permissions:
 
 on:
   push:
+    branches: [master]
     paths-ignore: ['**.md', '**.sh', '.editorconfig', '.gitignore', '.gitattributes']
   pull_request:
-    paths-ignore: ['**.md', '**.sh', '.editorconfig', '.gitignore', '.gitattributes']
   workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: 'Test'
     runs-on: ubuntu-22.04
+    # The pull_request run tests refs/pull/N/merge. With strict required status checks and
+    # merge-commit-only merges that is the same tree that lands on master, so skip the re-test.
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Merge pull request') }}
 
     steps:
       - name: Checkout repository
@@ -31,17 +38,43 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/.nuget/packages
-          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '.config/dotnet-tools.json') }}
           restore-keys: packages-${{ runner.os }}-
 
       - name: Check vulnerabilities
         run: ./scripts/check-vulnerabilities.sh
 
       - name: Execute tests
-        run: dotnet test -c Release --results-directory ./artifacts/trx --report-trx -v minimal
+        env:
+          DOTNET_NOLOGO: 1
+        run: |
+          dotnet test -c Release -v minimal \
+            --results-directory ./artifacts/trx \
+            --report-trx \
+            --coverage --coverage-output-format cobertura \
+            --coverage-settings ./tests/code-coverage.settings.xml
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
         if: (!cancelled())
         with:
           files: ./artifacts/trx/**/*.trx
+
+      - name: Merge coverage reports
+        if: (!cancelled())
+        run: |
+          dotnet tool restore
+          dotnet dotnet-coverage merge --nologo -o ./artifacts/coverage.cobertura.xml -f cobertura ./artifacts/trx/*.cobertura.xml
+
+      - name: Coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        if: (!cancelled())
+        with:
+          filename: ./artifacts/coverage.cobertura.xml
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Add coverage to job summary
+        if: (!cancelled())
+        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY

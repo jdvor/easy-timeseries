@@ -1,20 +1,11 @@
 [book]
 title = "Easy TimeSeries"
-description = "..."
+description = "Columnar time-series storage for .NET: compact on-disk format, per-column compression, and a source generator for DTOs."
 language = "en"
 src = "."
 
 [build]
 build-dir = "../site"
-
-# https://gitlab.com/tglman/mdbook-variables
-[preprocessor.variables]
-use_env = false
-
-[preprocessor.variables.variables]
-author_name = "Jan Dvořák"
-author_email = "github.mandarin334@passmail.com"
-copyright = "Copyright (c) 2026 Jan Dvořák"
 
 # https://github.com/badboy/mdbook-mermaid
 [preprocessor.mermaid]
@@ -28,7 +19,6 @@ renderer = ["html"]
 
 [output.html]
 additional-js = ["./assets/vendor/mermaid.min.js", "./assets/vendor/mermaid-init.js"]
-additional-css = ["./assets/vendor/mdbook-admonish.css"]
 
 [output.html.print]
 enable = false

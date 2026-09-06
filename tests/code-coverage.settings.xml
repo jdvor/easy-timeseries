@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Code coverage settings used by the CI test run (passed via the coverage-settings option).
+  Format: the DataCollector configuration section of a .runsettings file.
+  https://learn.microsoft.com/visualstudio/test/customizing-code-coverage-analysis
+-->
+<Configuration>
+  <CodeCoverage>
+    <ModulePaths>
+      <Exclude>
+        <!-- Sample datasets shared by tests and benchmarks; test scaffolding, not shipping code. -->
+        <ModulePath>.*Easy\.TimeSeries\.TestData\.dll$</ModulePath>
+      </Exclude>
+    </ModulePaths>
+  </CodeCoverage>
+</Configuration>

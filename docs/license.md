@@ -1,6 +1,6 @@
 # License
 
-[PolyForm Noncommercial License 1.0.0](../LICENSE) (full version)
+[PolyForm Noncommercial License 1.0.0](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE) (full version)
 
 ## TLDR
 
