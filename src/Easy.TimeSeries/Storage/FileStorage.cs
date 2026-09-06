@@ -24,7 +24,10 @@ public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
 
     public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
-        fileStream ??= file.OpenWrite();
+        // FileMode.Create truncates an existing file. FileInfo.OpenWrite would be OpenOrCreate, which leaves any
+        // tail of a previously longer file in place - harmless to the reader (the header drives slicing) but it
+        // silently inflates the file, which defeats the point of the format.
+        fileStream ??= new FileStream(file.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
         await fileStream.WriteAsync(data, cancellationToken).ConfigureAwait(false);
     }
 
