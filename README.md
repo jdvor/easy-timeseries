@@ -35,7 +35,6 @@ Supported data types in columnar storage:
 ## Users
 
 - [Getting started](docs/introduction.md)
-- [Roadmap](docs/roadmap.md)
 - [How the library is licensed](docs/license.md)
 - [How to report security issues](SECURITY.md)
 
@@ -45,5 +44,6 @@ Supported data types in columnar storage:
 - [Solution Overview](docs/solution-overview.md)
 - [Data Layout Details](docs/layout.md)
 - [Code Style](docs/code-style.md)
+- [Benchmarking](docs/benchmarking.md)
 
 [tscae]: https://www.tigerdata.com/blog/time-series-compression-algorithms-explained
