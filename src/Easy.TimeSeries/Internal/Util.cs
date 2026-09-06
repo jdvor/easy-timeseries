@@ -75,6 +75,7 @@ internal static class Util
             TimePrecision.Milliseconds => "yyyy-MM-dd HH:mm:ss.fff",
             TimePrecision.TenthsOfSecond => "yyyy-MM-dd HH:mm:ss.f",
             TimePrecision.Seconds => "yyyy-MM-dd HH:mm:ss",
+            TimePrecision.Days => "yyyy-MM-dd",
             _ => "yyyy-MM-dd HH:mm:ss.fff",
         };
     }

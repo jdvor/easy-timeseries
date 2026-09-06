@@ -92,7 +92,16 @@ Timestamps are the biggest lever. Two decisions:
      ordering you do not have.
 
 2. **Precision** - pick the coarsest that is still correct: `Milliseconds`, `TenthsOfSecond`, `Seconds`, `Days`.
-   Coarser precision means smaller deltas and fewer bits. Storing per-day data at `Milliseconds` wastes space.
+   Coarser units make the deltas smaller, so they normally cost fewer bits - storing per-day data at
+   `Milliseconds` wastes space. Measured on the bundled datasets, going from `Milliseconds` to `Days` takes the
+   Boeing trade timestamps from 250,765 to 28,077 bytes.
+
+   One case inverts this. If your samples are *exactly* evenly spaced and the interval is not a whole multiple of
+   the coarser unit, truncation turns a constant delta into an alternating one-unit jitter, and a column that cost
+   a single bit per row starts paying a bucket prefix plus a payload. A series spaced exactly `1d 7m 137ms` apart
+   grows from 101 bytes at `Milliseconds` to 325 at `TenthsOfSecond`. Real-world sampling is rarely that exact -
+   all five bundled datasets shrink monotonically as precision coarsens - but if yours is, measure before
+   coarsening.
 
 Epoch constraints to know: the format's epoch is `2000-01-01T00:00:00Z`. `AddTimeOrdered` has a 41-bit ceiling and
 cannot represent instants **before** the epoch - such values look "unsorted" and are rejected. Both limits are
