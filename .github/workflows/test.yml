@@ -7,8 +7,6 @@ permissions:
   pull-requests: write
 
 on:
-  # No branch filter on pull_request, and no paths-ignore either: 'Test' is a required status check,
-  # and a workflow skipped by a path filter never reports, leaving the PR blocked forever.
   push:
     branches: [master]
     paths-ignore: ['**.md', '**.sh', '.editorconfig', '.gitignore', '.gitattributes']
