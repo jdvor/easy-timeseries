@@ -31,9 +31,16 @@ public class DateTimeOrderedTests
         }
     }
 
+    /// <remarks>
+    /// The millisecond and tenths bounds each rose by 8 bytes when the widest delta-of-delta bucket went from 32
+    /// to 42 bits to stop it silently truncating gaps beyond ~24.9 days. This series has several multi-minute
+    /// hops that land in that bucket, so it pays the extra bits; the seconds bound is unchanged because its
+    /// deltas stay in the narrower buckets. Across the five datasets in the size report the same change cost
+    /// 8 bytes in total, so the ceiling here is not representative of real data.
+    /// </remarks>
     [Theory]
-    [InlineData(TimePrecision.Milliseconds, 73)]
-    [InlineData(TimePrecision.TenthsOfSecond, 57)]
+    [InlineData(TimePrecision.Milliseconds, 81)]
+    [InlineData(TimePrecision.TenthsOfSecond, 65)]
     [InlineData(TimePrecision.Seconds, 33)]
     public void WrittenSizeReflectsPrecision(TimePrecision precision, int maxSize)
     {
