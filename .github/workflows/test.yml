@@ -7,16 +7,25 @@ permissions:
   pull-requests: write
 
 on:
+  # No branch filter on pull_request, and no paths-ignore either: 'Test' is a required status check,
+  # and a workflow skipped by a path filter never reports, leaving the PR blocked forever.
   push:
+    branches: [master]
     paths-ignore: ['**.md', '**.sh', '.editorconfig', '.gitignore', '.gitattributes']
   pull_request:
-    paths-ignore: ['**.md', '**.sh', '.editorconfig', '.gitignore', '.gitattributes']
   workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     name: 'Test'
     runs-on: ubuntu-22.04
+    # The pull_request run tests refs/pull/N/merge. With strict required status checks and
+    # merge-commit-only merges that is the same tree that lands on master, so skip the re-test.
+    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Merge pull request') }}
 
     steps:
       - name: Checkout repository
