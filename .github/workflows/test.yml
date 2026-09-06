@@ -31,17 +31,36 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/.nuget/packages
-          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
           restore-keys: packages-${{ runner.os }}-
 
       - name: Check vulnerabilities
         run: ./scripts/check-vulnerabilities.sh
 
       - name: Execute tests
-        run: dotnet test -c Release --results-directory ./artifacts/trx --report-trx -v minimal
+        env:
+          DOTNET_NOLOGO: 1
+        run: |
+          dotnet test -c Release -v minimal \
+            --results-directory ./artifacts/trx \
+            --report-trx \
+            --coverage --coverage-output-format cobertura
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
         if: (!cancelled())
         with:
           files: ./artifacts/trx/**/*.trx
+
+      - name: Coverage summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        if: (!cancelled())
+        with:
+          filename: ./artifacts/trx/*.cobertura.xml
+          badge: true
+          format: markdown
+          output: both
+
+      - name: Add coverage to job summary
+        if: (!cancelled())
+        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY

@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/.nuget/packages
-          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
           restore-keys: packages-${{ runner.os }}-
 
       - name: Run benchmarks

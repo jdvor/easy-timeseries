@@ -33,12 +33,12 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/.nuget/packages
-          key: packages-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
           restore-keys: packages-${{ runner.os }}-
 
       - name: Execute tests
-        if: inputs.skip_tests == 'false' || inputs.skip_tests == '0' || inputs.skip_tests == ''
-        run: dotnet test -c Release -v minimal
+        if: ${{ !inputs.skip_tests }}
+        run: DOTNET_NOLOGO=1 dotnet test -c Release -v minimal
 
       - name: Validate NuGet packages
         run: ./scripts/validate-nuget-packages.sh
