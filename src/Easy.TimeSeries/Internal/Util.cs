@@ -61,7 +61,10 @@ internal static class Util
             TimePrecision.TenthsOfSecond => TimeSpan.TicksPerSecond / 10,
             TimePrecision.Seconds => TimeSpan.TicksPerSecond,
             TimePrecision.Days => TimeSpan.TicksPerSecond * 60 * 60 * 24,
-            _ => throw new NotImplementedException(),
+
+            // Every declared member is handled above, so this only fires for a value cast in from outside the
+            // enum's range.
+            _ => throw new ArgumentOutOfRangeException(nameof(precision), precision, "Unknown time precision."),
         };
     }
 
