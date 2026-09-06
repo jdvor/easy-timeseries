@@ -38,7 +38,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: /home/runner/.nuget/packages
-          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json') }}
+          key: packages-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'global.json', '.config/dotnet-tools.json') }}
           restore-keys: packages-${{ runner.os }}-
 
       - name: Check vulnerabilities
@@ -51,7 +51,8 @@ jobs:
           dotnet test -c Release -v minimal \
             --results-directory ./artifacts/trx \
             --report-trx \
-            --coverage --coverage-output-format cobertura
+            --coverage --coverage-output-format cobertura \
+            --coverage-settings ./tests/code-coverage.settings.xml
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
@@ -59,11 +60,17 @@ jobs:
         with:
           files: ./artifacts/trx/**/*.trx
 
+      - name: Merge coverage reports
+        if: (!cancelled())
+        run: |
+          dotnet tool restore
+          dotnet dotnet-coverage merge --nologo -o ./artifacts/coverage.cobertura.xml -f cobertura ./artifacts/trx/*.cobertura.xml
+
       - name: Coverage summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         if: (!cancelled())
         with:
-          filename: ./artifacts/trx/*.cobertura.xml
+          filename: ./artifacts/coverage.cobertura.xml
           badge: true
           format: markdown
           output: both
