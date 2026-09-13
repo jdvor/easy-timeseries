@@ -29,8 +29,33 @@ if (( ${#packages[@]} == 0 )); then
     echo "No packages created."
     exit 0
 fi
+readarray -t packages < <(printf '%s\n' "${packages[@]}" | sort)
 ls -Alh "$pack_dir"
 
-if [ -n "$push" ]; then
-    dotnet nuget push "$pack_dir/*.nupkg" --source "https://api.nuget.org/v3/index.json" --api-key "$push" --skip-duplicate
+if [ -z "$push" ]; then
+    exit 0
 fi
+
+# Pushed one at a time on purpose. A single `dotnet nuget push` over a glob aborts on the first
+# rejected package and silently leaves the rest unpublished, which yields a half-released version.
+# Here every package is attempted, and the script fails at the end if any of them did not make it.
+failed=()
+for pkg in "${packages[@]}"; do
+    name=$(basename "$pkg")
+    echo "--- pushing $name ---"
+    if ! dotnet nuget push "$pkg" \
+        --source 'https://api.nuget.org/v3/index.json' \
+        --api-key "$push" \
+        --skip-duplicate
+    then
+        echo "[FAILURE] push failed: $name" >&2
+        failed+=("$name")
+    fi
+done
+
+if (( ${#failed[@]} > 0 )); then
+    echo "[FAILURE] ${#failed[@]} of ${#packages[@]} package(s) failed to push: ${failed[*]}" >&2
+    exit 1
+fi
+
+echo "[NOTE] all ${#packages[@]} package(s) pushed" >&2
