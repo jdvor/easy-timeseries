@@ -71,9 +71,9 @@ internal static class GoldenFixtures
     /// Regular 15-minute sampling with two repeats and one gap - the delta-of-delta happy path plus edges.
     /// </summary>
     /// <remarks>
-    /// Gaps are kept under ~24 days on purpose. At millisecond precision the widest delta-of-delta bucket is 32
-    /// bits, so a delta-of-delta beyond +/-2^31 ms (~24.86 days) is silently truncated by the ordered writer. That
-    /// is a live defect, not a property of the format worth pinning here - see the note in artifacts/fix1.md.
+    /// The gaps stay small on purpose: they exercise the three narrow delta-of-delta buckets, which is where
+    /// regularly-sampled series actually live. The 42-bit catch-all bucket covers the full timestamp range and is
+    /// pinned separately by <see cref="DateTimeOrderedLimitsTests" />.
     /// </remarks>
     private static DateTime[] OrderedTimestamps { get; } =
     [
