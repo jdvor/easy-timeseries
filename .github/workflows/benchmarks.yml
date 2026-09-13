@@ -63,6 +63,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           run_id="${{ steps.run.outputs.run_id }}"
+          # The `perf-results/` prefix is load-bearing: test.yml skips its `Test` job for PRs from
+          # this branch, since they only add markdown. Renaming it here re-enables the full suite.
           branch_name="perf-results/$run_id"
           base_branch="${{ github.ref_name }}"
 

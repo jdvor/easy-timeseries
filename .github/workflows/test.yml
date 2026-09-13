@@ -20,9 +20,11 @@ jobs:
   test:
     name: 'Test'
     runs-on: ubuntu-22.04
-    # The pull_request run tests refs/pull/N/merge. With strict required status checks and
-    # merge-commit-only merges that is the same tree that lands on master, so skip the re-test.
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Merge pull request') }}
+
+    # Skipped for merge commits on master (the PR already tested this tree) and for benchmark results PRs (markdown only).
+    if: >-
+      ${{ (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Merge pull request'))
+      && !startsWith(github.head_ref, 'perf-results/') }}
 
     steps:
       - name: Checkout repository
@@ -77,8 +79,8 @@ jobs:
       - name: Add coverage to job summary
         if: (!cancelled())
         run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
-  # Companion to the `if:` on `test` above - the two conditions are exact inverses and must be
-  # kept in sync. Its only purpose is to make the skipped `Test` job self-explanatory in the UI.
+
+  # Explains the greyed-out `Test` job in the UI. Inverse of the merge-commit case - keep in sync.
   explain-skip:
     name: 'Test skipped (already run on the PR)'
     runs-on: ubuntu-22.04
