@@ -7,7 +7,7 @@ tooling (e.g. Parquet consumers).
 ## Install
 
 ```shell
-dotnet tool install --global Easy.TimeSeries.CmdLine
+dotnet tool install --global Easy.TimeSeries.Tool
 ```
 
 ## Commands

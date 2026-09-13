@@ -3,6 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <PackAsTool>true</PackAsTool>
+    <!-- PackageId is set explicitly: it would otherwise default to AssemblyName ("ets"), which falls
+         outside the "Easy.TimeSeries*" glob of the nuget.org trusted-publishing policy. -->
+    <PackageId>Easy.TimeSeries.Tool</PackageId>
     <ToolCommandName>ets</ToolCommandName>
     <AssemblyName>ets</AssemblyName>
     <IsPublishable>true</IsPublishable>
