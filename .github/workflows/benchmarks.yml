@@ -76,12 +76,26 @@ jobs:
           git commit -m "chore: add benchmark results for $run_id"
           git push --force origin "$branch_name"
 
-          if gh pr view "$branch_name" --json state -q .state >/dev/null 2>&1; then
+          repo="${{ github.repository }}"
+          owner="${{ github.repository_owner }}"
+
+          if [ "$(gh api "repos/$repo/pulls?state=open&head=$owner:$branch_name" --jq 'length')" != 0 ]; then
             echo "PR for $branch_name already exists; skipping creation"
-          else
-            gh pr create \
-              --base "$base_branch" \
-              --head "$branch_name" \
-              --title "Benchmark results: $run_id" \
-              --body "Automated benchmark run (mode: ${{ inputs.mode }}, precision: ${{ inputs.precision }}, filter: \`${{ inputs.filter }}\`). Review before merging - shared runner timings can be noisy."
+            exit 0
           fi
+
+          # Retried because this returned a 500 once before; see run 34748153610.
+          for attempt in 1 2 3; do
+            if gh api "repos/$repo/pulls" \
+              -f title="Benchmark results: $run_id" \
+              -f head="$branch_name" \
+              -f base="$base_branch" \
+              -f body="Automated benchmark run (mode: ${{ inputs.mode }}, precision: ${{ inputs.precision }}, filter: \`${{ inputs.filter }}\`). Review before merging - shared runner timings can be noisy." \
+              --jq .html_url
+            then
+              exit 0
+            fi
+            echo "attempt $attempt failed; retrying in 15s"
+            sleep 15
+          done
+          exit 1
