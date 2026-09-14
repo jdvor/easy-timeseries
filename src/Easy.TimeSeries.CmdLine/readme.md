@@ -12,7 +12,7 @@ dotnet tool install --global Easy.TimeSeries.Tool
 
 ## Commands
 
-- `ets ref-files-ts` - generates reference `.ets` files from built-in sample data.
+- `ets ref-files-ets` - generates reference `.ets` files from built-in sample data.
 - `ets ref-files-parquet` - generates reference Parquet files from the same sample data.
 - `ets convert-to-parquet` - converts an existing `.ets` file to Apache Parquet.
 

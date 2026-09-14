@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 /// <summary>
 /// Maps between UTC timestamps and the date-partitioned file paths a time series is stored under
-/// (e.g. <c>root/2026/07/06/subject.dat</c> at day granularity). Builds the paths that cover a time range for
+/// (e.g. <c>root/2026/07/06/subject.ets</c> at day granularity). Builds the paths that cover a time range for
 /// reading and parses an existing path back into its timestamp and subject id.
 /// </summary>
 public sealed class PathBuilder
@@ -19,8 +19,8 @@ public sealed class PathBuilder
     private readonly Regex rgx;
 
     /// <summary>Creates a builder rooted at <paramref name="root"/> that partitions by <paramref name="granularity"/>.</summary>
-    /// <param name="suffix">File extension without the dot; defaults to <c>dat</c>.</param>
-    public PathBuilder(string root, TimeGranularity granularity, string suffix = "ts")
+    /// <param name="suffix">File extension without the dot; defaults to <c>ets</c>.</param>
+    public PathBuilder(string root, TimeGranularity granularity, string suffix = "ets")
     {
         this.root = root;
         this.granularity = granularity;

@@ -28,7 +28,7 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
 | `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage) and `AzureBlobStorageFactory`, which maps a time bucket to a blob path via `PathBuilder`. |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
-| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ts`, `ref-files-parquet`, `convert-to-parquet`.                     |
+| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`.                     |
 | `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
 | `src/Easy.TimeSeries.TestData`     | implemented | Re-usable sample datasets (Boeing, Gold, Vix, Macro4, PowerPlant) shared by tests and benchmarks.                          |
 | `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |

@@ -18,7 +18,7 @@ using Easy.TimeSeries.Parquet;
 using Easy.TimeSeries.Storage;
 
 // From storage (local file, blob, in-memory, ...) to a Parquet file.
-var source = new FileStorage("readings.ts");
+var source = new FileStorage("readings.ets");
 await using var output = File.Create("readings.parquet");
 await TsToParquetConverter.ConvertAsync(source, output);
 

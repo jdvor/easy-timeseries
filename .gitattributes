@@ -26,3 +26,4 @@
 *.pdf   binary
 *.csv   binary
 *.dat   binary
+*.ets   binary

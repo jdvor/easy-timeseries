@@ -56,7 +56,7 @@ public class PathBuilderTests : IClassFixture<PathBuilderTests.Fixture>
     public void Parse_path_accepts_every_hour_of_the_day(int hour)
     {
         var pb = fixture.BuilderFor(TimeGranularity.Hour);
-        var path = $"{Root}/2023/06/09/{hour:D2}/AB01.ts";
+        var path = $"{Root}/2023/06/09/{hour:D2}/AB01.ets";
 
         var ok = pb.TryParse(path, out var time, out var subjectId);
 
@@ -82,7 +82,7 @@ public class PathBuilderTests : IClassFixture<PathBuilderTests.Fixture>
         var pb = new PathBuilder(TimeGranularity.Hour);
         var path = pb.GetExpectedFilePath(
             fromUtcInclusive: new DateTime(2026, 8, 2, 20, 32, 47, 895, DateTimeKind.Utc));
-        Assert.Equal("2026/08/02/20/2026080220.ts", path);
+        Assert.Equal("2026/08/02/20/2026080220.ets", path);
     }
 
     public static IEnumerable<object[]> ParsePathData => TestCases.Select(x => new object[] { x });
@@ -90,19 +90,19 @@ public class PathBuilderTests : IClassFixture<PathBuilderTests.Fixture>
     public static IEnumerable<object[]> AllHoursData => Enumerable.Range(0, 24).Select(h => new object[] { h });
 
     public static readonly TestCase[] TestCases = {
-        TestCase.Ok(TimeGranularity.Day, $"{Root}/2023/12/17/AB01.ts", "2023-12-17", "AB01"),
-        TestCase.Ok(TimeGranularity.Day, $"{Root}/2023/12/18/39f9e034c031.ts", "2023-12-18", "39f9e034c031"),
-        TestCase.Fail(TimeGranularity.Day, "some/other/root/2023/12/18/39f9e034c031.ts"),
-        TestCase.Fail(TimeGranularity.Day, $"{Root}/2023/12/32/AB01.ts"),
-        TestCase.Fail(TimeGranularity.Day, $"{Root}/2023/00/17/AB01.ts"),
-        TestCase.Fail(TimeGranularity.Day, $"{Root}/0023/12/17/AB01.ts"),
+        TestCase.Ok(TimeGranularity.Day, $"{Root}/2023/12/17/AB01.ets", "2023-12-17", "AB01"),
+        TestCase.Ok(TimeGranularity.Day, $"{Root}/2023/12/18/39f9e034c031.ets", "2023-12-18", "39f9e034c031"),
+        TestCase.Fail(TimeGranularity.Day, "some/other/root/2023/12/18/39f9e034c031.ets"),
+        TestCase.Fail(TimeGranularity.Day, $"{Root}/2023/12/32/AB01.ets"),
+        TestCase.Fail(TimeGranularity.Day, $"{Root}/2023/00/17/AB01.ets"),
+        TestCase.Fail(TimeGranularity.Day, $"{Root}/0023/12/17/AB01.ets"),
 
-        TestCase.Ok(TimeGranularity.Hour, $"{Root}/2023/06/09/22/80977b4b-6122-4080-87db-a09d93486da1.ts",
+        TestCase.Ok(TimeGranularity.Hour, $"{Root}/2023/06/09/22/80977b4b-6122-4080-87db-a09d93486da1.ets",
             "2023-06-09 22:00", "80977b4b-6122-4080-87db-a09d93486da1"),
 
-        TestCase.Ok(TimeGranularity.Month, $"{Root}/2023/02/123654.ts", "2023-02-01", "123654"),
+        TestCase.Ok(TimeGranularity.Month, $"{Root}/2023/02/123654.ets", "2023-02-01", "123654"),
 
-        TestCase.Ok(TimeGranularity.Year, $"{Root}/2023/a09d93486da1.ts", "2023-01-01", "a09d93486da1"),
+        TestCase.Ok(TimeGranularity.Year, $"{Root}/2023/a09d93486da1.ets", "2023-01-01", "a09d93486da1"),
     };
 
     public record TestCase(

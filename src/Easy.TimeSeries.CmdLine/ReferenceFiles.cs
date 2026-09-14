@@ -12,7 +12,7 @@ using Easy.TimeSeries.TestData;
 /// </summary>
 internal static class ReferenceFiles
 {
-    /// <summary>Generate reference Easy.TimeSeries (.ts) files into a directory.</summary>
+    /// <summary>Generate reference Easy.TimeSeries (.ets) files into a directory.</summary>
     /// <param name="dirPath">-d, Target directory for the generated files.</param>
     public static async Task GenerateTimeSeriesAsync(
         string dirPath,
@@ -50,7 +50,7 @@ internal static class ReferenceFiles
         CancellationToken ct)
         where T : class
     {
-        var path = Path.Combine(dir, name + ".ts");
+        var path = Path.Combine(dir, name + ".ets");
         DeleteIfExists(path);
 
         using var storage = new FileStorage(path);
