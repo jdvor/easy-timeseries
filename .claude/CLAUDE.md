@@ -40,6 +40,21 @@ high-signal - it is not a substitute for the codebase or the docs.
 Every project in the solution has a working implementation. The one deliberate feature gap is the reverse Parquet
 direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
 
+## Sibling repository: `easy-timeseries-js`
+
+A read-only **JavaScript/TypeScript decoder** for the same `.ets` format lives in `jdvor/easy-timeseries-js`,
+cloned locally at `~/dev/jdvor/easy-timeseries-js`. It is published to npm as `@jdvor/easy-timeseries` and ships
+an Apache ECharts adapter and a demo site. Writing `.ets` from JavaScript is permanently out of scope there - this
+repository remains the only writer.
+
+As of 2026-09-14 no code has been written there yet - the plan lives at `artifacts/plan.md` in that working copy
+and is gitignored, so it is local to that machine rather than part of the repository. The plan also specifies the
+work owed from **this** side: a `manifest.json` next to the golden fixtures, an always-on test that keeps it in
+sync, golden coverage for the four `*Raw` column types, and a `docs/javascript-reader.md` page in the book.
+
+**What crosses the boundary: the golden fixture corpus, and nothing else.** The JS repo vendors a copy of
+`tests/data/golden/v1/` (1280 bytes, 13 files) and refreshes it with its own `scripts/sync-fixtures.sh`.
+
 ## Core library layout (`src/Easy.TimeSeries/`)
 
 Top-level - public surface:
@@ -109,6 +124,10 @@ Read these before touching anything in `Internal/`:
   literal `--`.
 - Golden format fixtures live in `tests/data/golden/v1`. Regenerate **only** for a deliberate format change:
   `./scripts/regen-golden.sh`, then review the diff.
+- **A deliberate format change is a two-repo change.** Because `easy-timeseries-js` is a separate repository, a
+  format change here will not fail its conformance suite in the same pull request - nothing enforces this
+  automatically. After regenerating the fixtures, dispatch `sync-fixtures.yml` in that repo rather than leaving it
+  to the weekly cron.
 - Benchmarks: `dotnet run -c Release --project src/Easy.TimeSeries.Benchmarks`.
 - CI: `.github/workflows/test.yml` runs on push/PR (paths-ignore for docs/scripts). `.github/workflows/publish.yml` is
   `workflow_dispatch` only; semantic version is derived from conventional commit prefixes (`feat:`, `BREAKING CHANGE:`)
