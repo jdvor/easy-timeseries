@@ -19,7 +19,7 @@ internal static class WriterEmitter
             .Line("/// <summary>")
             .Line($"/// Writes collections of <see cref=\"{model.TypeName}\"/> into columnar storage.")
             .Line("/// Columns are written in ascending column-index order as required by the storage format.")
-            .Line("/// The underlying columnar writer requires at least 2 rows.")
+            .Line("/// The underlying columnar writer requires at least 1 row.")
             .Line("/// </summary>")
             .GeneratedCodeAttribute()
             .Open($"public sealed partial class {model.TypeName}Writer : {EmitterCommon.AbstractionsNs}.IWriter<{dto}>")

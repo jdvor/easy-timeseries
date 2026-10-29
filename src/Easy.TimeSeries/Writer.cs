@@ -25,10 +25,10 @@ public sealed class Writer : IDisposable
     public int MaxAllowedBufferSize { get; init; } = Constants.MaxAllowedBufferSize;
 
     /// <summary>Creates a writer for a fixed number of rows. Every <c>Add*</c> call reads at most this many values.</summary>
-    /// <param name="rows">Row count shared by all columns; must be at least 2.</param>
+    /// <param name="rows">Row count shared by all columns; must be at least 1.</param>
     public Writer(int rows)
     {
-        Expect.EqualOrGreaterThan(rows, 2);
+        Expect.EqualOrGreaterThan(rows, 1);
         this.rows = rows;
     }
 

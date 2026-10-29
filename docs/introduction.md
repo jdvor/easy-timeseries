@@ -18,7 +18,7 @@ There are two ways to use the library; they share the same storage format and th
 using Easy.TimeSeries;
 using Easy.TimeSeries.Storage;
 
-var rows = samples.Count; // at least 2
+var rows = samples.Count; // at least 1
 
 using var writer = new Writer(rows)
     .AddTimeOrdered(samples.Select(s => s.TimestampUtc), "ts")   // ascending UTC timestamps
@@ -68,7 +68,7 @@ options map one-to-one onto them.
 
 ## Rules that always apply
 
-- **At least 2 rows.** `new Writer(n)` requires `n >= 2`.
+- **At least 1 row.** `new Writer(n)` requires `n >= 1`; an empty file is never written.
 - **Timestamps must be UTC.** `AddTimeOrdered` / `AddTimeUnordered` reject non-UTC input. `DateTime.UtcNow` and friends
   are banned in this repo - take the clock from `TimeProvider.GetUtcNow()`.
 - **No nulls.** The format has no null slot; nullable properties (`int?`, `string?`) are rejected by the generator.
