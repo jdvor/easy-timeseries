@@ -1,20 +1,29 @@
 namespace Easy.TimeSeries.Storage;
 
 using Easy.TimeSeries.Abstractions;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 /// <summary>
 /// Local-file backing for both writing and reading a serialized buffer. Reads load the whole file into memory.
 /// </summary>
 /// <remarks>
-/// Writes are atomic: data goes to a temp file next to the target (<c>.{name}.{guid}.tmp</c>), which
+/// Writes are atomic: data goes to a temp file next to the target (<c>.{name}.{guid}.tmp</c>, the name cut to
+/// <see cref="TempNameLength"/> characters so the temp file fits the file system's name limit), which
 /// <see cref="CloseAsync"/> renames over the target. Readers never see a partially written file, and disposing
 /// without <see cref="CloseAsync"/> deletes the temp file and leaves an existing target untouched. A crash can leave
 /// an orphaned temp file behind; its name never ends in <c>.ets</c>, so path parsing and listings ignore it.
 /// </remarks>
-public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
+public sealed partial class FileStorage : IVersionedWriteStorage, IReadStorage, IDisposable
 {
     /// <summary>Extension of the temp files written next to the target before the final rename.</summary>
     public const string TempFileExtension = ".tmp";
+
+    /// <summary>
+    /// Characters of the target name kept in a temp file name: at most 1 + 4 x 32 + 1 + 32 + 4 = 166 bytes in UTF-8,
+    /// well below the 255-byte name limit of common file systems, however long the target name is.
+    /// </summary>
+    private const int TempNameLength = 32;
 
     private readonly FileInfo file;
     private readonly Action<FileInfo>? beforeCommit;
@@ -42,6 +51,9 @@ public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
         this.beforeCommit = beforeCommit;
     }
 
+    /// <summary>Last-write time and size of the committed file; <c>null</c> before a successful close.</summary>
+    public StorageVersion? CommittedVersion { get; private set; }
+
     public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(disposed, this);
@@ -50,7 +62,7 @@ public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
             // The temp file lives in the target directory, so the final rename stays on one volume.
             var directory = file.Directory ?? throw new InvalidOperationException($"'{file.FullName}' has no directory.");
             directory.Create();
-            tempPath = Path.Combine(directory.FullName, $".{file.Name}.{Guid.NewGuid():N}{TempFileExtension}");
+            tempPath = Path.Combine(directory.FullName, $".{TempNamePrefix(file.Name)}.{Guid.NewGuid():N}{TempFileExtension}");
             fileStream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
         }
 
@@ -74,7 +86,11 @@ public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
         {
             file.Refresh();
             beforeCommit?.Invoke(file);
+
+            // A rename keeps last-write time and size, so the temp file already carries the committed version.
+            var version = VersionOf(new FileInfo(tempPath));
             File.Move(tempPath, file.FullName, overwrite: true);
+            CommittedVersion = version;
         }
 
         tempPath = null;
@@ -120,9 +136,24 @@ public sealed class FileStorage : IWriteStorage, IReadStorage, IDisposable
 
     public override string ToString() => file.FullName;
 
-    /// <summary>Whether <paramref name="fileName"/> looks like a temp file left by an aborted or crashed write.</summary>
-    public static bool IsTempFileName(string fileName)
-        => fileName.StartsWith('.') && fileName.EndsWith(TempFileExtension, StringComparison.Ordinal);
+    /// <summary>
+    /// Whether <paramref name="fileName"/> has the shape of a temp file written by this class,
+    /// <c>.{name}.{32 hex digits}.tmp</c>, i.e. one left by an aborted or crashed write.
+    /// </summary>
+    public static bool IsTempFileName(string fileName) => TempFileNameRegex().IsMatch(fileName);
+
+    /// <summary>Version of a local file: its last-write time and size.</summary>
+    internal static StorageVersion VersionOf(FileInfo file)
+        => new(string.Create(CultureInfo.InvariantCulture, $"{file.LastWriteTimeUtc.Ticks:x}-{file.Length:x}"));
+
+    // Never splits a surrogate pair, so the temp name stays valid UTF-16.
+    private static string TempNamePrefix(string name)
+        => name.Length <= TempNameLength
+            ? name
+            : name[..(char.IsHighSurrogate(name[TempNameLength - 1]) ? TempNameLength - 1 : TempNameLength)];
+
+    [GeneratedRegex(@"^\..*\.[0-9a-f]{32}\.tmp\z", RegexOptions.CultureInvariant)]
+    private static partial Regex TempFileNameRegex();
 
     private void DeleteTempFile()
     {

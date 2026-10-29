@@ -26,7 +26,7 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.Abstractions` | implemented | Stable contracts for external consumers: `ColumnAttribute`, `IMaterializer<T>`, `DataValueType`, precision enums.          |
 | `src/Easy.TimeSeries`              | implemented | Core library. Bit-level encoders/decoders, `Header`, `Writer`, `ReadBuilder`, `ReflectionBasedMaterializer`, storage.      |
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
-| `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage) and `AzureBlobStorageFactory`, which maps a time bucket to a blob path via `PathBuilder`. |
+| `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage, buffered single upload on close) and `AzureBlobCatalog` (IStorageCatalog over a container, ETag versions). |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
 | `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`.                     |
 | `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
@@ -67,8 +67,9 @@ Top-level - public surface:
 - `ReflectionBasedMaterializer.cs` - reference implementation of `IMaterializer<T>`; the source-generated variant will
   replace it for hot paths.
 - `PooledArrayBufferWriter.cs` - `IBufferWriter<byte>` backed by `ArrayPool<byte>.Shared`, used by every column.
-- `Storage/` - `IWriteStorage`, `IReadStorage`, `FileStorage`, `InMemoryStorage`.
-- `Paths/` - `PathBuilder` and `TimeGranularity` for layout of files on disk.
+- `Storage/` - `FileStorage`, `InMemoryStorage`, `FileCatalog`, `InMemoryCatalog`, `StoragePath`. The contracts
+  (`IWriteStorage`, `IReadStorage`, `IStorageCatalog`) live in Abstractions.
+- `Paths/` - `PathBuilder` and `TimeGranularity` for the bucketed path layout.
 - `Extensions.cs`, `Exceptions.cs`, `AssemblyInfo.cs`.
 
 `Internal/` - per-type encoders/decoders and shared bit-level primitives. Marked `internal` and only exposed to
@@ -107,6 +108,27 @@ Read these before touching anything in `Internal/`:
   bytes of each column buffer are reserved for the header, written at `Flush`.
 - For `ScaledNumber32`/`ScaledNumber64`, `ColumnInfo.Meta` stores `decimalPlaces` (e.g. `2`), not the scale
   (e.g. `100`). Both writer and reader sides must do `scale = (int)Math.Pow(10, decimalPlaces)`.
+
+## Storage and path conventions
+
+See `docs/storage.md` for the full picture. Worth knowing before touching `Storage/`, `Paths/` or the Azure adapter:
+
+- Storage paths are logical: always `/`-separated and relative, on every OS. `PathBuilder` never uses
+  `Path.Combine`; only `FileCatalog` maps logical paths to OS paths.
+- Subject ids are lowercase `[a-z0-9_-]+` and `PathBuilder.TryParse` is case-sensitive. `GetFilePath` must stay the
+  exact inverse of `TryParse`, including for an empty root.
+- Every write is atomic, and disposing an `IWriteStorage` without `CloseAsync` aborts it. `FileStorage` writes a
+  `.{name}.{guid}.tmp` file and renames it on close. `AzureBlobStorage` buffers and uploads once on close.
+- Do not use `BlobClient.OpenWriteAsync`: it uploads an empty blob when it opens, which truncates the target and
+  consumes any `IfMatch` condition before the data is written.
+- `FileStorage` commits and `FileCatalog` deletes run under `PathLocks`, so a version check and the rename or delete
+  are atomic within the process. Every commit and delete of a local file must take that lock, conditional or not.
+- Storages returned by `OpenWrite` implement `IVersionedWriteStorage`. Take the version of your own write from
+  `CommittedVersion`, never from a `GetAsync` after the commit.
+- `IStorageCatalog` implementations share one contract test, `tests/Easy.TimeSeries.Tests/StorageCatalogContract.cs`,
+  which the AzureBlobs test project links in. A new catalog derives from it.
+- Abstractions targets `netstandard2.0`: no default interface methods. `IAsyncDisposable` and `IAsyncEnumerable` come
+  from `Microsoft.Bcl.AsyncInterfaces`.
 
 ## Build, test, run
 

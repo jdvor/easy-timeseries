@@ -163,9 +163,29 @@ public class FileStorageTests : IDisposable
     [InlineData("sensor-a.ets", false)]
     [InlineData("sensor-a.tmp", false)]
     [InlineData(".hidden.ets", false)]
+    [InlineData(".settings.tmp", false)]
+    [InlineData(".x.ets.0123456789abcdef.tmp", false)]
+    [InlineData(".x.ets.0123456789ABCDEF0123456789ABCDEF.tmp", false)]
     public void Temp_file_names_are_recognized(string fileName, bool expected)
     {
         Assert.Equal(expected, FileStorage.IsTempFileName(fileName));
+    }
+
+    [Fact]
+    public async Task Long_target_names_get_a_bounded_temp_name()
+    {
+        var path = Path.Combine(dir, $"{new string('a', 240)}.ets");
+        var ct = TestContext.Current.CancellationToken;
+        await using (var storage = new FileStorage(path))
+        {
+            await storage.WriteAsync(new byte[] { 1 }, ct);
+            var temp = Path.GetFileName(Assert.Single(Directory.GetFiles(dir)));
+            Assert.True(FileStorage.IsTempFileName(temp));
+            Assert.True(temp.Length <= 70, temp);
+            await storage.CloseAsync(ct);
+        }
+
+        Assert.Equal([1], await File.ReadAllBytesAsync(path, ct));
     }
 
     [Fact]

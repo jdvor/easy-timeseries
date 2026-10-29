@@ -34,7 +34,8 @@ The core library and the only project that understands the on-disk format.
 - `Writer` accumulates one columnar stream per `Add*` call and flushes them to an `IWriteStorage`.
 - `Reader` walks the header, dispatches each column to its decoder, and pushes values into an `IMaterializer<T>`.
 - `Header`, `ColumnInfo`, `ColumnValueType` and `Version` describe the file-level metadata.
-- `Storage/` provides `FileStorage` and `InMemoryStorage`; `Paths/` maps timestamps onto a bucketed file layout.
+- `Storage/` provides `FileStorage` and `InMemoryStorage`, and the catalogs `FileCatalog` and `InMemoryCatalog`.
+- `Paths/` maps timestamps and subject ids onto a bucketed file layout.
 - `Internal/` holds the bit-level primitives and one encoder/decoder pair per supported type. It is `internal`,
   exposed only to the test, benchmark and CLI assemblies.
 
@@ -50,8 +51,9 @@ code. See [Source Generation](source-generation.md).
 ## Easy.TimeSeries.AzureBlobs
 
 Mirrors the local-file storage in Azure Blob Storage. `AzureBlobStorage` implements both `IWriteStorage` and
-`IReadStorage` over a `BlobClient`; `AzureBlobStorageFactory` turns a time bucket into a blob path using the same
-`PathBuilder` the file layout uses, so a dataset laid out on disk and in a container has the same shape.
+`IReadStorage` over a `BlobClient`. `AzureBlobCatalog` implements `IStorageCatalog` over a container, with blob
+ETags as versions. Paths come from the same `PathBuilder` the file layout uses, so a dataset laid out on disk and in
+a container has the same shape. See [Storage](storage.md).
 
 ## Easy.TimeSeries.Parquet
 
