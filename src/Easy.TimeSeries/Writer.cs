@@ -3,6 +3,7 @@ namespace Easy.TimeSeries;
 using Easy.TimeSeries.Abstractions;
 using System.Buffers;
 using System.Collections.Immutable;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 /// <summary>
@@ -141,7 +142,7 @@ public sealed class Writer : IDisposable
 
     /// <summary>
     /// Adds a <see cref="float"/> column stored losslessly with XOR/delta encoding. Best for slowly-varying signals.
-    /// For uncorrelated values use <see cref="AddFloatRandom"/>; to trade precision for size use <see cref="AddScaledNumber32"/>.
+    /// For uncorrelated values use <see cref="AddFloatRandom"/>; to trade precision for size use <see cref="AddScaledNumber32(IEnumerable{float}, string, int)"/>.
     /// </summary>
     public Writer AddFloat(IEnumerable<float> values, string columnLabel)
     {
@@ -219,28 +220,19 @@ public sealed class Writer : IDisposable
     /// <param name="decimalPlaces">Decimal places to retain, 1-8.</param>
     public Writer AddScaledNumber32(IEnumerable<float> values, string columnLabel, int decimalPlaces)
     {
-        Expect.Range(decimalPlaces, 1, 8);
+        AddScaledNumber32Column(values, columnLabel, decimalPlaces);
+        return this;
+    }
 
-        var scale = (int)Math.Pow(10, decimalPlaces);
-        var sizeHint = ScaledNumber32Writer.GetSizeHint(rows);
-        var (bufferWriter, bitWriter) = CreateWriters(sizeHint);
-        var writer = new ScaledNumber32Writer(bitWriter, scale);
-        var i = 0;
-        foreach (var value in values)
-        {
-            if (i >= rows)
-            {
-                break;
-            }
-
-            writer.Write(value);
-            ++i;
-        }
-
-        bitWriter.Flush();
-        var ci = new ColumnInfo(columns.Count, ColumnValueType.ScaledNumber32, decimalPlaces, columnLabel);
-        columns.Add((ci, bufferWriter));
-
+    /// <summary>
+    /// Adds a scaled 32-bit column from <see cref="double"/> values. Same encoding as the <see cref="float"/>
+    /// overload, but rounding happens on the double, so values whose scaled integer exceeds float precision (2^24)
+    /// keep their last digits.
+    /// </summary>
+    /// <param name="decimalPlaces">Decimal places to retain, 1-8.</param>
+    public Writer AddScaledNumber32(IEnumerable<double> values, string columnLabel, int decimalPlaces)
+    {
+        AddScaledNumber32Column(values, columnLabel, decimalPlaces);
         return this;
     }
 
@@ -299,7 +291,7 @@ public sealed class Writer : IDisposable
 
     /// <summary>
     /// Adds a <see cref="double"/> column quantized to <paramref name="decimalPlaces"/> and stored as a scaled 64-bit
-    /// integer (lossy). The wider counterpart to <see cref="AddScaledNumber32"/> for values whose scaled magnitude
+    /// integer (lossy). The wider counterpart to <see cref="AddScaledNumber32(IEnumerable{float}, string, int)"/> for values whose scaled magnitude
     /// exceeds <see cref="int"/>.
     /// </summary>
     /// <param name="decimalPlaces">Decimal places to retain, 1-8.</param>
@@ -466,6 +458,33 @@ public sealed class Writer : IDisposable
         var written = storageHeader.WriteTo(buffer);
         var memory = new ReadOnlyMemory<byte>(buffer)[..written];
         return storage.WriteAsync(memory, cancellationToken);
+    }
+
+    private void AddScaledNumber32Column<T>(IEnumerable<T> values, string columnLabel, int decimalPlaces)
+        where T : struct, INumberBase<T>
+    {
+        Expect.Range(decimalPlaces, 1, 8);
+
+        var scale = (int)Math.Pow(10, decimalPlaces);
+        var sizeHint = ScaledNumber32Writer.GetSizeHint(rows);
+        var (bufferWriter, bitWriter) = CreateWriters(sizeHint);
+        var writer = new ScaledNumber32Writer(bitWriter, scale);
+        var i = 0;
+        foreach (var value in values)
+        {
+            if (i >= rows)
+            {
+                break;
+            }
+
+            // float -> double is exact, so both overloads encode float input identically.
+            writer.Write(double.CreateTruncating(value));
+            ++i;
+        }
+
+        bitWriter.Flush();
+        var ci = new ColumnInfo(columns.Count, ColumnValueType.ScaledNumber32, decimalPlaces, columnLabel);
+        columns.Add((ci, bufferWriter));
     }
 
     private void AddRawColumn<T>(IEnumerable<T> values, string columnLabel, ColumnValueType valueType)

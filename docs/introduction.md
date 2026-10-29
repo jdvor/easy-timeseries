@@ -140,7 +140,9 @@ flowchart TD
 - **`ScaledNumber32/64`** (`NumberPrecision = DecimalPlacesN`): when the value is naturally fixed-point - a price to 2
   places, a temperature to 1. It multiplies by `10^N`, rounds to an integer, and delta-encodes that. Usually the smallest
   option, but **lossy**: anything beyond `N` decimals is dropped. Via the attribute, `N` is 1-5; the low-level
-  `AddScaledNumber32(..., decimalPlaces)` accepts 1-8.
+  `AddScaledNumber32(..., decimalPlaces)` accepts 1-8. `AddScaledNumber32` also takes `double` values: a `float` holds
+  integers exactly only up to 2^24, so a computed `double` whose scaled value exceeds that keeps its last digits only
+  through the `double` overload.
 - **Default (`Continuous`)** - `AddFloat` / `AddDouble`: XOR-delta ("Gorilla") encoding. Lossless, and compact when
   successive values are similar - the normal case for a sampled signal. This is the default when no option is set.
 - **`Random`** - `AddFloatRandom` / `AddDoubleRandom` / `NumberDistribution = Random`: for values that are unrelated
