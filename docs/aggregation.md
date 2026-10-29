@@ -414,6 +414,33 @@ A scheduled job typically recovers a sliding window, e.g. the last 7 days; a ful
 timestamp resolution with the same size would keep its version; with one processor and real-world write rates this
 does not happen.
 
+## Command line
+
+`ets downsample` runs the batch downsampler over a directory, with predefined functions only:
+
+```shell
+ets downsample --input ./data/raw --output ./data --raw-granularity hour \
+    --aggregation 1m --storage day --from 2026-10-01 --to 2026-11-01 \
+    --group Sensor --columns Voltage=avg+min+max+q95,Current=avg+stddev,Status=last,Ok
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--input` | Directory with raw files in the `PathBuilder` layout, without a root |
+| `--output` | Directory under which the aggregated root is created |
+| `--raw-granularity` | Raw storage time span: `hour`, `day`, `month`, `year` |
+| `--aggregation` | Aggregation time span slug: `1s`, `10s`, `1m`, `5m`, `15m`, `1h`, `1d` |
+| `--storage` | Aggregated storage time span: `hour`, `day`, `month`, `year` |
+| `--from`, `--to` | UTC range; storage time spans overlapping it are computed |
+| `--columns` | Columns separated by `,`, functions by `+`, e.g. `Voltage=avg+q99.9,Status` |
+| `--group` | Optional group column |
+| `--subject` | Optional; every subject found in the range when omitted |
+| `--time` | Optional raw time column, for raw files with several DateTime columns |
+| `--force` | Overwrite existing aggregated files |
+
+Function names are `avg`, `median`, `min`, `max`, `stddev`, `trueratio`, `last`, `q95`, `q99` and `q<percent>`.
+A failing file is reported and the run continues; the exit code is 1 if any file failed.
+
 ## Limits and errors
 
 | Situation | Thrown as | When |

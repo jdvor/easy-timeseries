@@ -16,10 +16,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Easy.TimeSeries.Aggregation\Easy.TimeSeries.Aggregation.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries.TestData\Easy.TimeSeries.TestData.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries\Easy.TimeSeries.csproj" />
     <ProjectReference Include="..\Easy.TimeSeries.Parquet\Easy.TimeSeries.Parquet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The assembly is named "ets", so the shared $(AssemblyName).Tests rule does not match the test project. -->
+    <InternalsVisibleTo Include="Easy.TimeSeries.CmdLine.Tests" />
   </ItemGroup>
 
   <ItemGroup>

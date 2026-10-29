@@ -74,6 +74,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Easy.TimeSeries.Aggregation
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Easy.TimeSeries.Aggregation.Tests", "tests\Easy.TimeSeries.Aggregation.Tests\Easy.TimeSeries.Aggregation.Tests.csproj", "{1A4DEB29-4DD7-45E1-8100-66CBD1FD799A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Easy.TimeSeries.CmdLine.Tests", "tests\Easy.TimeSeries.CmdLine.Tests\Easy.TimeSeries.CmdLine.Tests.csproj", "{0456596B-E4C6-4729-B6D1-ABE943D18090}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -264,6 +266,18 @@ Global
 		{1A4DEB29-4DD7-45E1-8100-66CBD1FD799A}.Release|x64.Build.0 = Release|Any CPU
 		{1A4DEB29-4DD7-45E1-8100-66CBD1FD799A}.Release|x86.ActiveCfg = Release|Any CPU
 		{1A4DEB29-4DD7-45E1-8100-66CBD1FD799A}.Release|x86.Build.0 = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|x64.Build.0 = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Debug|x86.Build.0 = Debug|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|x64.ActiveCfg = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|x64.Build.0 = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|x86.ActiveCfg = Release|Any CPU
+		{0456596B-E4C6-4729-B6D1-ABE943D18090}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -280,5 +294,6 @@ Global
 		{3D6D8916-92D1-412D-A952-AC68DF8C5BF4} = {7F0A3757-9AA4-48EB-9388-9CE3E1AC85C5}
 		{952B066C-9498-46BF-B213-0B5E01E63A3D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{1A4DEB29-4DD7-45E1-8100-66CBD1FD799A} = {4E5540AD-D45A-4919-AA9D-C94FF6956200}
+		{0456596B-E4C6-4729-B6D1-ABE943D18090} = {4E5540AD-D45A-4919-AA9D-C94FF6956200}
 	EndGlobalSection
 EndGlobal

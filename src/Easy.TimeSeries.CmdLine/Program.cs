@@ -8,5 +8,6 @@ app.ConfigureLogging(Setup.ConfigureLogging);
 app.Add("ref-files-ets", ReferenceFiles.GenerateTimeSeriesAsync);
 app.Add("ref-files-parquet", ReferenceFiles.GenerateParquetAsync);
 app.Add("convert-to-parquet", Conversions.ConvertToParquetAsync);
+app.Add("downsample", Downsampling.DownsampleAsync);
 
 await app.RunAsync(args);

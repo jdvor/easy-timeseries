@@ -28,8 +28,8 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
 | `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage, buffered single upload on close) and `AzureBlobCatalog` (IStorageCatalog over a container, ETag versions). |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
-| `src/Easy.TimeSeries.Aggregation` | in progress | `AggregationSpec`, predefined functions (`Agg`, `Functions/`), batch `Downsampler` (`Engine/`), write-time `AggregatingCatalog` and `AggregationMaintenance` (`WriteTime/`). The `ets downsample` CLI command is pending. See `docs/aggregation.md`. |
-| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`.                     |
+| `src/Easy.TimeSeries.Aggregation` | implemented | `AggregationSpec`, predefined functions (`Agg`, `Functions/`), batch `Downsampler` (`Engine/`), write-time `AggregatingCatalog` and `AggregationMaintenance` (`WriteTime/`). See `docs/aggregation.md`. |
+| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`, `downsample`.                     |
 | `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
 | `src/Easy.TimeSeries.TestData`     | implemented | Re-usable sample datasets (Boeing, Gold, Vix, Macro4, PowerPlant) shared by tests and benchmarks.                          |
 | `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |
@@ -37,11 +37,11 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `tests/Easy.TimeSeries.SrcGen.Tests` | implemented | `CSharpGeneratorDriver`-based tests for the generator: generated-code shape, ETS diagnostics, incrementality.            |
 | `tests/Easy.TimeSeries.Parquet.Tests` | implemented | Conversion tests for `TsToParquetConverter`, including native type mapping.                                             |
 | `tests/Easy.TimeSeries.Aggregation.Tests` | implemented | Function unit tests on hand-built slices, spec binding, and `OracleTests` comparing the downsampler with a LINQ reference over randomized data. |
+| `tests/Easy.TimeSeries.CmdLine.Tests` | implemented | `ets downsample` argument parsing and run loop over temp directories. The CLI assembly is `ets`, so it grants `InternalsVisibleTo` explicitly. |
 | `tests/Easy.TimeSeries.AzureBlobs.Tests` | implemented | Integration tests against a real Azurite container via Testcontainers; needs Docker to run.                          |
 
-Every project except Aggregation has a working implementation. Aggregation is being delivered in steps (batch
-downsampler, write-time hook and maintenance done; the CLI command pending). The other deliberate gap is the reverse
-Parquet direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
+Every project in the solution has a working implementation. The one deliberate feature gap is the reverse Parquet
+direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
 
 ## Sibling repository: `easy-timeseries-js`
 
