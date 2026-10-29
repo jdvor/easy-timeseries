@@ -170,5 +170,15 @@ internal sealed class CategoryMap
         {
             throw new ArgumentException("Keys in the map must have maximal length 255.", nameof(map));
         }
+
+        // The serialized map length is stored as ushort: count (2 bytes) plus one length byte and the ASCII label per
+        // key. Beyond that the length would wrap and the file could not be read back.
+        var size = I16 + map.Keys.Sum(x => (long)x.Length + 1);
+        if (size > ushort.MaxValue)
+        {
+            throw new ArgumentException(
+                $"The {map.Count} category labels take {size} bytes; a Category column holds at most {ushort.MaxValue}.",
+                nameof(map));
+        }
     }
 }
