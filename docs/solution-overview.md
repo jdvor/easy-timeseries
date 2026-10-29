@@ -55,6 +55,12 @@ Mirrors the local-file storage in Azure Blob Storage. `AzureBlobStorage` impleme
 ETags as versions. Paths come from the same `PathBuilder` the file layout uses, so a dataset laid out on disk and in
 a container has the same shape. See [Storage](storage.md).
 
+## Easy.TimeSeries.Aggregation
+
+Aggregated (downsampled) views over raw data, built only on the public core API. `AggregationSpec` declares the
+aggregation time span, the storage time span, grouping and the functions; `Downsampler` computes one aggregated file
+from the raw files of its storage time span. See [Aggregation](aggregation.md).
+
 ## Easy.TimeSeries.Parquet
 
 Converts a serialized buffer into an Apache Parquet stream through `Parquet.Net`. The conversion is driven by the
