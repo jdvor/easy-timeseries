@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\..\src\Easy.TimeSeries.AzureBlobs\Easy.TimeSeries.AzureBlobs.csproj" />
+    <ProjectReference Include="..\..\src\Easy.TimeSeries.Aggregation\Easy.TimeSeries.Aggregation.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Easy.TimeSeries.Tests\StorageCatalogContract.cs" Link="StorageCatalogContract.cs" />

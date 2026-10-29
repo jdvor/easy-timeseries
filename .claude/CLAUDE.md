@@ -28,7 +28,7 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
 | `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage, buffered single upload on close) and `AzureBlobCatalog` (IStorageCatalog over a container, ETag versions). |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
-| `src/Easy.TimeSeries.Aggregation` | in progress | `AggregationSpec`, predefined functions (`Agg`, `Functions/`), `IAggregationFunction<T>`, batch `Downsampler` (`Engine/`). Write-time hook and maintenance are not done yet. See `docs/aggregation.md`. |
+| `src/Easy.TimeSeries.Aggregation` | in progress | `AggregationSpec`, predefined functions (`Agg`, `Functions/`), batch `Downsampler` (`Engine/`), write-time `AggregatingCatalog` and `AggregationMaintenance` (`WriteTime/`). The `ets downsample` CLI command is pending. See `docs/aggregation.md`. |
 | `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`.                     |
 | `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
 | `src/Easy.TimeSeries.TestData`     | implemented | Re-usable sample datasets (Boeing, Gold, Vix, Macro4, PowerPlant) shared by tests and benchmarks.                          |
@@ -40,7 +40,7 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `tests/Easy.TimeSeries.AzureBlobs.Tests` | implemented | Integration tests against a real Azurite container via Testcontainers; needs Docker to run.                          |
 
 Every project except Aggregation has a working implementation. Aggregation is being delivered in steps (batch
-downsampler done; write-time hook, maintenance and the CLI command pending). The other deliberate gap is the reverse
+downsampler, write-time hook and maintenance done; the CLI command pending). The other deliberate gap is the reverse
 Parquet direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
 
 ## Sibling repository: `easy-timeseries-js`
@@ -132,6 +132,26 @@ See `docs/storage.md` for the full picture. Worth knowing before touching `Stora
   which the AzureBlobs test project links in. A new catalog derives from it.
 - Abstractions targets `netstandard2.0`: no default interface methods. `IAsyncDisposable` and `IAsyncEnumerable` come
   from `Microsoft.Bcl.AsyncInterfaces`.
+
+## Write-time aggregation invariants
+
+Worth knowing before changing `src/Easy.TimeSeries.Aggregation/WriteTime/`:
+
+- `HookedWriteStorage.CloseAsync` must never throw because of aggregation once the inner raw commit succeeded.
+  Everything after the commit falls back to setting a marker and reporting through `OnFailure`.
+- The processor deletes a marker only with `ifMatch` = the version it listed. Dropping that condition loses raw data
+  written during a recompute. Every marker write must change the version.
+- Markers are the only path to recomputing a longer storage time span. Recovery sets markers; it never recomputes.
+- Raw retention is checked against the span **start**: the oldest raw files of a span are deleted first.
+  `AggregationConfiguration.Validate` requires retention of at least the longest storage time span plus the grace
+  period.
+- Recovery decides staleness from source records (`{subject}.sources.json` next to each aggregated `.ets`), the raw
+  paths and versions an aggregated file was computed from, never from timestamps. Every write of an aggregated file by the hook or the processor must be
+  followed by its record, with versions taken no later than the raw files were read.
+- A source record also names the aggregated version it describes, taken from `CommittedVersion` of that write. The
+  hook binds its kept bytes to the raw `CommittedVersion` the same way; a `GetAsync` after a commit proves nothing.
+- Post-commit work in the hook runs with `CancellationToken.None`: the raw file is committed, so stopping halfway would
+  leave aggregations neither computed nor marked.
 
 ## Build, test, run
 

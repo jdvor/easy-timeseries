@@ -24,3 +24,6 @@ public readonly record struct AggregationResult(int Rows, int Groups, int RawFil
     /// <summary>Whether an aggregated file was written.</summary>
     public bool Written => Rows > 0;
 }
+
+/// <summary>A raw file found in a catalog listing, with the version it had when listed.</summary>
+internal readonly record struct ListedRawFile(DateTime BucketStart, string Path, StorageVersion Version);

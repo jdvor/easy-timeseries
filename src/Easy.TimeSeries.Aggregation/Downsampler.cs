@@ -103,22 +103,64 @@ public sealed class Downsampler
         }
 
         var spanEnd = ValidateSpanStart(storageSpanStart);
-        var targetPath = aggregatedPaths.GetFilePath(storageSpanStart, subjectId);
-        var (_, prefix) = raw.GetExpectedPaths(storageSpanStart, spanEnd);
-        var files = new List<RawFile>();
+        var listed = await ListRawFilesAsync(catalog, raw, storageSpanStart, spanEnd, new HashSet<string>(StringComparer.Ordinal) { subjectId }, cancellationToken)
+            .ConfigureAwait(false);
+        var (result, _) = await RunAsync(catalog, subjectId, storageSpanStart, listed.GetValueOrDefault(subjectId) ?? [], cancellationToken)
+            .ConfigureAwait(false);
+        return result;
+    }
+
+    /// <summary>
+    /// Raw files of the storage time span, per subject, for the given subjects only. Subject ids are file names, so a
+    /// listing of the span covers every subject; one listing can serve all subjects of a span.
+    /// </summary>
+    internal static async Task<Dictionary<string, List<ListedRawFile>>> ListRawFilesAsync(
+        IStorageCatalog catalog,
+        PathBuilder raw,
+        DateTime spanStart,
+        DateTime spanEnd,
+        IReadOnlySet<string> subjects,
+        CancellationToken cancellationToken)
+    {
+        var files = new Dictionary<string, List<ListedRawFile>>(StringComparer.Ordinal);
+        var (_, prefix) = raw.GetExpectedPaths(spanStart, spanEnd);
         await foreach (var entry in catalog.ListAsync(prefix, cancellationToken).ConfigureAwait(false))
         {
             if (raw.TryParse(entry.Path, out var bucketStart, out var subject)
-                && string.Equals(subject, subjectId, StringComparison.Ordinal)
-                && bucketStart >= storageSpanStart
+                && subjects.Contains(subject)
+                && bucketStart >= spanStart
                 && bucketStart < spanEnd)
             {
-                files.Add(new RawFile(bucketStart, catalog.OpenRead(entry.Path), entry.Path));
+                if (!files.TryGetValue(subject, out var list))
+                {
+                    files[subject] = list = [];
+                }
+
+                list.Add(new ListedRawFile(bucketStart, entry.Path, entry.Version));
             }
         }
 
+        return files;
+    }
+
+    /// <summary>
+    /// Aggregates listed raw files of one subject and writes to the spec's path in <paramref name="catalog"/>.
+    /// Also returns the version the aggregated write committed, or <c>null</c> when nothing was written or the
+    /// catalog does not report versions.
+    /// </summary>
+    internal async Task<(AggregationResult Result, StorageVersion? Version)> RunAsync(
+        IStorageCatalog catalog,
+        string subjectId,
+        DateTime storageSpanStart,
+        IReadOnlyList<ListedRawFile> rawFiles,
+        CancellationToken cancellationToken)
+    {
+        ValidateSpanStart(storageSpanStart);
+        var targetPath = aggregatedPaths.GetFilePath(storageSpanStart, subjectId);
+        var files = rawFiles.Select(x => new RawFile(x.BucketStart, catalog.OpenRead(x.Path), x.Path)).ToArray();
         await using var target = catalog.OpenWrite(targetPath);
-        return await RunAsync(storageSpanStart, files, target, cancellationToken).ConfigureAwait(false);
+        var result = await RunAsync(storageSpanStart, files, target, cancellationToken).ConfigureAwait(false);
+        return (result, (target as IVersionedWriteStorage)?.CommittedVersion);
     }
 
     private DateTime ValidateSpanStart(DateTime storageSpanStart)
