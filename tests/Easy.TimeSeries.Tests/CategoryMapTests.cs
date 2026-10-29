@@ -45,6 +45,22 @@ public class CategoryMapTests
         Assert.Contains("65535", ex.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Plzeň")]
+    [InlineData("Brno-ž")]
+    [InlineData("€")]
+    public void Non_ascii_labels_are_rejected(string label)
+    {
+        var ex = Assert.Throws<ArgumentException>(() => new CategoryMap(["ok", label]));
+        Assert.Contains(label, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Writer_rejects_non_ascii_labels_instead_of_corrupting_them()
+    {
+        Assert.Throws<ArgumentException>(() => new Writer(2).AddCategory(["Brno-ž", "Brno-š"], "city"));
+    }
+
     [Fact]
     public void Largest_serializable_map_round_trips()
     {

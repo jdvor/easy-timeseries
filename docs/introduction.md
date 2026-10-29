@@ -160,7 +160,13 @@ flowchart TD
 
 `AddCategory` / a `string` column builds a dictionary (label → small integer id) and stores the id stream. It is the
 right choice only for **low-cardinality** columns - a sensor name, a country code, a status enum. Ids 0-15 cost 5 bits,
-higher ids 16 bits. Labels are ASCII, max 255 chars, and there is a `short.MaxValue` ceiling on distinct values.
+higher ids 16 bits. Limits, each enforced on write with an `ArgumentException`:
+
+- Labels are ASCII only; a label with any other character (`Plzeň`, `€`) is rejected, not transliterated.
+- A label has at most 255 characters.
+- At most `short.MaxValue` distinct values.
+- All labels together take at most 64 KiB (one byte per character plus one per label).
+
 High-cardinality free text (unique messages, GUIDs as strings) is a poor fit - it defeats the dictionary.
 
 ### Booleans and exact decimals

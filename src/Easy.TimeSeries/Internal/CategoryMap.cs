@@ -171,6 +171,16 @@ internal sealed class CategoryMap
             throw new ArgumentException("Keys in the map must have maximal length 255.", nameof(map));
         }
 
+        // Labels are stored as ASCII; anything else would be written as '?' and could make two labels identical,
+        // which the reader rejects.
+        var nonAscii = map.Keys.FirstOrDefault(x => !Ascii.IsValid(x));
+        if (nonAscii is not null)
+        {
+            throw new ArgumentException(
+                $"Category label '{nonAscii}' contains non-ASCII characters; Category columns store ASCII labels only.",
+                nameof(map));
+        }
+
         // The serialized map length is stored as ushort: count (2 bytes) plus one length byte and the ASCII label per
         // key. Beyond that the length would wrap and the file could not be read back.
         var size = I16 + map.Keys.Sum(x => (long)x.Length + 1);
