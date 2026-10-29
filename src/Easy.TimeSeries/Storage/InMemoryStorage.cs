@@ -62,4 +62,10 @@ public sealed class InMemoryStorage : IWriteStorage, IReadStorage, IDisposable
         disposed = true;
         buffer.Dispose();
     }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
 }
