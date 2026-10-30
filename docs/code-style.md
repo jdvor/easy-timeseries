@@ -91,7 +91,7 @@ This is where the library is opinionated.
 - xUnit v3 (see `Directory.Packages.props`). One test class per production type or feature area.
 - Test method names use **snake_case** describing the use case (`Write_and_read_dto_collection`, `Read_returns_expected_count_for_int32_column`). Avoid the `condition_what_result` pattern - it produces long names that don't display well. The body of the test documents the conditions.
 - `[Theory]` over `[Fact]` when the same logic is exercised with different inputs. Inline data with `[InlineData]`; use a `MemberData` source only when the data is large or shared.
-- Round-trip tests should write then read through the public `Writer`/`ReadBuilder` pipeline, not just exercise a single internal type, to catch wiring bugs (`ReferentialDataTests`, `BitsTests` are good examples).
+- Round-trip tests should write then read through the public `Writer`/`Reader` pipeline, not just exercise a single internal type, to catch wiring bugs (`ReferentialDataTests`, `BitsTests` are good examples).
 - Integration tests live in the same test project; if they grow large enough to warrant a separate project, name it `Easy.TimeSeries.IntegrationTests` (already provisioned in `InternalsVisibleTo`).
 - Use `BufferUtil` and similar small test helpers rather than recreating buffer setup inline in each test.
 
@@ -104,16 +104,14 @@ This is where the library is opinionated.
 
 ## Commits and branches
 
-- Conventional Commits, lowercase header (`feat:`, `fix:`, `refactor:`, `test:`, `doc:`, `perf:`, `chore:`, `ci:`, `build:`, `revert:`). The CI workflow uses commit prefixes to drive semantic version bumps.
-- Header is imperative, max 89 chars, no trailing period. Body explains *why*, not *what*.
-- One logical change per commit. Tests ship in the same commit as the feature or fix they cover.
-- Branch names use prefixes: `feature/<topic>`, `fix/<topic>`. No personal or opaque names.
+See [`.claude/rules/git-commits.md`](../.claude/rules/git-commits.md) - it applies to people and AI agents alike. The CI
+workflow uses Conventional Commit prefixes to drive semantic version bumps.
 
 ## What we don't use
 
 - No mediator pattern (e.g. MediatR).
 - No "provider", "service", "manager", or "helper" classes that exist only to forward calls.
-- No reflection on hot paths in shipping code. `ReflectionBasedHydrator` exists as a correctness baseline; the source-generator project is meant to replace it.
+- No reflection on hot paths in shipping code. `ReflectionBasedMaterializer` exists as a correctness baseline; hot paths use the materializer emitted by `Easy.TimeSeries.SrcGen`.
 - No `dynamic`, no runtime code emit (`Reflection.Emit`). Expression-tree-compiled delegates are acceptable when the result is cached.
 - No `DateTime.Now` or `DateTime.UtcNow` (banned). Use `TimeProvider`.
 - No third-party DI container in the core library; consumer apps wire things up themselves.

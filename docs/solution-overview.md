@@ -7,6 +7,7 @@
 | src/Easy.TimeSeries.SrcGen       | C# NuGet package       | Library source-generating reader and/or writer based on a DTO class    |
 | src/Easy.TimeSeries.AzureBlobs   | C# NuGet package       | Library providing storage to Azure Blobs                               |
 | src/Easy.TimeSeries.Parquet      | C# NuGet package       | Library with conversion support for TimeSeries -> Apache Parquet       |
+| src/Easy.TimeSeries.Aggregation  | C# NuGet package       | Downsampling: aggregation specs, batch downsampler, write-time hooks   |
 | src/Easy.TimeSeries.TestData     | C# library             | Re-usable data collections for tests and benchmarks                    |
 | src/Easy.TimeSeries.CmdLine      | C# console             | Developer's swiss knife tool around TimeSeries                         |
 | src/Easy.TimeSeries.Benchmarks   | C# console             | Application that runs performance benchmarks                           |
@@ -14,6 +15,8 @@
 | tests/Easy.TimeSeries.Tests      | C# xUnit tests         | Core library: encoders, storage, golden format fixtures                |
 | tests/Easy.TimeSeries.SrcGen.Tests | C# xUnit tests       | Generator output, ETS diagnostics, incrementality                      |
 | tests/Easy.TimeSeries.Parquet.Tests | C# xUnit tests      | Parquet conversion and type mapping                                    |
+| tests/Easy.TimeSeries.Aggregation.Tests | C# xUnit tests  | Aggregation functions, spec binding, downsampler vs a LINQ oracle      |
+| tests/Easy.TimeSeries.CmdLine.Tests | C# xUnit tests      | `ets downsample` argument parsing and run loop                         |
 | tests/Easy.TimeSeries.AzureBlobs.Tests | C# xUnit tests   | Azure Blob storage against Azurite via Testcontainers (needs Docker)   |
 | docs/                            | mdbook, markdown files | Documentation for both TimeSeries users and contributors               |
 | scripts/                         | Bash scripts           | Scripts used in GitHub Actions and/or locally from interactive shell   |
@@ -70,7 +73,8 @@ Only the `ets -> parquet` direction exists today. See [Parquet Conversion](parqu
 ## Easy.TimeSeries.CmdLine
 
 The `ets` dotnet tool - a developer's swiss knife around the format. Generates reference `.ets` and Parquet files
-from the bundled sample data, and converts an existing `.ets` file to Parquet. Useful for inspecting the layout
+from the bundled sample data, converts an existing `.ets` file to Parquet, and downsamples a directory of `.ets`
+files. Useful for inspecting the layout
 and for feeding downstream tooling something real to read.
 
 ## Easy.TimeSeries.TestData
