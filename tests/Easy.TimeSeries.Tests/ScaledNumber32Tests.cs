@@ -1,5 +1,7 @@
 namespace Easy.TimeSeries.Tests;
 
+using Easy.TimeSeries.Storage;
+
 public class ScaledNumber32Tests
 {
     private readonly ITestOutputHelper output;
@@ -72,5 +74,52 @@ public class ScaledNumber32Tests
             var ok = (int)(diff * scale) == 0;
             Assert.True(ok, $"difference {diff}, expected: {expected}, actual: {actual}, precision: {precision}");
         }
+    }
+    [Fact]
+    public async Task Double_overload_keeps_digits_beyond_float_precision()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // 123456789 exceeds 2^24, so 1234567.89 narrowed to float first loses its last digit.
+        Assert.Equal(123_456_789, await WriteAndReadScaledIntegerAsync(w => w.AddScaledNumber32([1234567.89d], "x", 2), ct));
+        Assert.Equal(123_456_788, await WriteAndReadScaledIntegerAsync(w => w.AddScaledNumber32([1234567.89f], "x", 2), ct));
+    }
+
+    [Fact]
+    public async Task Float_and_double_overloads_encode_float_input_identically()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        float[] values = [0f, 1.5f, -2.25f, 3.13f, 12345.67f, 0.01f];
+
+        var fromFloat = await WriteAsync(w => w.AddScaledNumber32(values, "x", 2), values.Length, ct);
+        var fromDouble = await WriteAsync(w => w.AddScaledNumber32(values.Select(v => (double)v), "x", 2), values.Length, ct);
+
+        Assert.Equal(fromFloat, fromDouble);
+    }
+
+    [Fact]
+    public async Task Integer_collection_expression_binds_to_the_float_overload()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Compiles only if the call is not ambiguous; float is the better conversion target for int literals.
+        var bytes = await WriteAsync(w => w.AddScaledNumber32([1, 2, 3], "x", 2), 3, ct);
+        Assert.NotEmpty(bytes);
+    }
+
+    private static async Task<int> WriteAndReadScaledIntegerAsync(Func<Writer, Writer> add, CancellationToken ct)
+    {
+        var bytes = await WriteAsync(add, 1, ct);
+        var (_, columns) = Header.ReadLayout(bytes);
+        var reader = new Int32Reader(bytes.AsSpan(columns[0].Start, columns[0].Length));
+        return reader.Read();
+    }
+
+    private static async Task<byte[]> WriteAsync(Func<Writer, Writer> add, int rows, CancellationToken ct)
+    {
+        using var storage = new InMemoryStorage();
+        using var writer = add(new Writer(rows));
+        await writer.WriteToAsync(storage, ct);
+        return storage.WrittenSpan.ToArray();
     }
 }

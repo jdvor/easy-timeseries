@@ -18,7 +18,7 @@ There are two ways to use the library; they share the same storage format and th
 using Easy.TimeSeries;
 using Easy.TimeSeries.Storage;
 
-var rows = samples.Count; // at least 2
+var rows = samples.Count; // at least 1
 
 using var writer = new Writer(rows)
     .AddTimeOrdered(samples.Select(s => s.TimestampUtc), "ts")   // ascending UTC timestamps
@@ -68,7 +68,7 @@ options map one-to-one onto them.
 
 ## Rules that always apply
 
-- **At least 2 rows.** `new Writer(n)` requires `n >= 2`.
+- **At least 1 row.** `new Writer(n)` requires `n >= 1`; an empty file is never written.
 - **Timestamps must be UTC.** `AddTimeOrdered` / `AddTimeUnordered` reject non-UTC input. `DateTime.UtcNow` and friends
   are banned in this repo - take the clock from `TimeProvider.GetUtcNow()`.
 - **No nulls.** The format has no null slot; nullable properties (`int?`, `string?`) are rejected by the generator.
@@ -140,7 +140,9 @@ flowchart TD
 - **`ScaledNumber32/64`** (`NumberPrecision = DecimalPlacesN`): when the value is naturally fixed-point - a price to 2
   places, a temperature to 1. It multiplies by `10^N`, rounds to an integer, and delta-encodes that. Usually the smallest
   option, but **lossy**: anything beyond `N` decimals is dropped. Via the attribute, `N` is 1-5; the low-level
-  `AddScaledNumber32(..., decimalPlaces)` accepts 1-8.
+  `AddScaledNumber32(..., decimalPlaces)` accepts 1-8. `AddScaledNumber32` also takes `double` values: a `float` holds
+  integers exactly only up to 2^24, so a computed `double` whose scaled value exceeds that keeps its last digits only
+  through the `double` overload.
 - **Default (`Continuous`)** - `AddFloat` / `AddDouble`: XOR-delta ("Gorilla") encoding. Lossless, and compact when
   successive values are similar - the normal case for a sampled signal. This is the default when no option is set.
 - **`Random`** - `AddFloatRandom` / `AddDoubleRandom` / `NumberDistribution = Random`: for values that are unrelated
@@ -158,7 +160,13 @@ flowchart TD
 
 `AddCategory` / a `string` column builds a dictionary (label → small integer id) and stores the id stream. It is the
 right choice only for **low-cardinality** columns - a sensor name, a country code, a status enum. Ids 0-15 cost 5 bits,
-higher ids 16 bits. Labels are ASCII, max 255 chars, and there is a `short.MaxValue` ceiling on distinct values.
+higher ids 16 bits. Limits, each enforced on write with an `ArgumentException`:
+
+- Labels are ASCII only; a label with any other character (`Plzeň`, `€`) is rejected, not transliterated.
+- A label has at most 255 characters.
+- At most `short.MaxValue` distinct values.
+- All labels together take at most 64 KiB (one byte per character plus one per label).
+
 High-cardinality free text (unique messages, GUIDs as strings) is a poor fit - it defeats the dictionary.
 
 ### Booleans and exact decimals

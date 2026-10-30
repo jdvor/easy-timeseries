@@ -1,8 +1,41 @@
 ## Summary
 
-Include relevant motivation and context.
+<!--
+Why this change is needed and what it does as a whole, in a few sentences. Link the design docs if there are any.
+Then list changes in the sections below, one bullet per change in behavior. Skip minor details a reviewer does not need
+to judge the PR. Delete sections that do not apply.
+Do not list commits, changed files or test counts - GitHub shows them next to this description.
+-->
 
-Include a brief summary of important changes.
+**Breaking changes**
+
+<!-- What breaks for existing users, and how to migrate. -->
+
+- 
+
+**Changes to existing code**
+
+<!-- Non-breaking additions or changes to existing types and behavior. -->
+
+- 
+
+**New features**
+
+<!-- New types, projects or commands. A mermaid diagram helps when several new parts interact. -->
+
+- 
+
+**Fixes to released behavior**
+
+<!-- Defects in code that has already been released, with their effect on users. -->
+
+- 
+
+**Known limitations**
+
+<!-- What this change deliberately does not handle, and what a user must know to deploy it safely. -->
+
+- 
 
 ## Type of Change
 

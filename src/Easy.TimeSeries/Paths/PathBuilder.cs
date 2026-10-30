@@ -8,8 +8,14 @@ using System.Text.RegularExpressions;
 /// (e.g. <c>root/2026/07/06/subject.ets</c> at day granularity). Builds the paths that cover a time range for
 /// reading and parses an existing path back into its timestamp and subject id.
 /// </summary>
-public sealed class PathBuilder
+/// <remarks>
+/// Paths are logical storage paths: always joined with <c>/</c>, whatever the OS, and relative to a container or
+/// directory. Subject ids are lowercase (<c>[a-z0-9_-]+</c>) and matched case-sensitively, so two blobs differing only
+/// in case never parse to the same subject.
+/// </remarks>
+public sealed partial class PathBuilder
 {
+    private const char Separator = '/';
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
     private readonly string root;
     private readonly TimeGranularity granularity;
@@ -19,21 +25,91 @@ public sealed class PathBuilder
     private readonly Regex rgx;
 
     /// <summary>Creates a builder rooted at <paramref name="root"/> that partitions by <paramref name="granularity"/>.</summary>
+    /// <param name="root">Logical path prefix, segments separated by <c>/</c>; may be empty.</param>
     /// <param name="suffix">File extension without the dot; defaults to <c>ets</c>.</param>
     public PathBuilder(string root, TimeGranularity granularity, string suffix = "ets")
     {
-        this.root = root;
+        Expect.NotNull(root);
+        this.root = root.TrimEnd(Separator);
         this.granularity = granularity;
         this.suffix = suffix;
         dateFmt = GetDateTimeFormatString(granularity);
         nonSegmentedDateFmt = GetNonSegmentedDateTimeFormatString(granularity);
-        var pattern = GetPattern(root, granularity, suffix);
-        rgx = new Regex(pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        var pattern = GetPattern(this.root, granularity, suffix);
+        rgx = new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant);
     }
 
     public PathBuilder(TimeGranularity granularity)
         : this(string.Empty, granularity)
     {
+    }
+
+    /// <summary>Logical path prefix without a trailing <c>/</c>; empty when the files live at the container root.</summary>
+    public string Root => root;
+
+    /// <summary>Size of the time bucket one file covers.</summary>
+    public TimeGranularity Granularity => granularity;
+
+    /// <summary>Whether <paramref name="subjectId"/> can be used in a path: lowercase letters, digits, <c>_</c> and <c>-</c>.</summary>
+    public static bool IsValidSubjectId(string subjectId)
+        => !string.IsNullOrEmpty(subjectId) && SubjectIdRegex().IsMatch(subjectId);
+
+    /// <summary>Start of the bucket containing <paramref name="utc"/>.</summary>
+    public DateTime GetBucketStart(DateTime utc)
+    {
+        Expect.Utc(utc);
+        return Start(utc, granularity);
+    }
+
+    /// <summary>Exclusive end of the bucket containing <paramref name="bucketStart"/>, i.e. the start of the next one.</summary>
+    public DateTime GetBucketEnd(DateTime bucketStart)
+    {
+        Expect.Utc(bucketStart);
+        return granularity switch
+        {
+            TimeGranularity.Hour => bucketStart.BeginningOfNextHourUtc(),
+            TimeGranularity.Day => bucketStart.NextMidnightUtc(),
+            TimeGranularity.Month => bucketStart.BeginningOfNextMonthUtc(),
+            TimeGranularity.Year => bucketStart.BeginningOfNextYearUtc(),
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    /// <summary>
+    /// Starts of the buckets overlapping <paramref name="fromUtcInclusive"/> to <paramref name="toUtcExclusive"/>, in
+    /// ascending order. Empty when the range is empty.
+    /// </summary>
+    public IEnumerable<DateTime> GetBucketStarts(DateTime fromUtcInclusive, DateTime toUtcExclusive)
+    {
+        Expect.Utc(fromUtcInclusive);
+        Expect.Utc(toUtcExclusive);
+        return fromUtcInclusive < toUtcExclusive ? Iterate(Start(fromUtcInclusive, granularity), toUtcExclusive) : [];
+
+        IEnumerable<DateTime> Iterate(DateTime start, DateTime end)
+        {
+            for (var dt = start; dt < end; dt = GetBucketEnd(dt))
+            {
+                yield return dt;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Path of the file holding <paramref name="subjectId"/> in the bucket containing <paramref name="bucketStart"/>:
+    /// <c>{root}/{date folders}/{subjectId}.{suffix}</c>. The inverse of <see cref="TryParse"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">The subject id is not valid, see <see cref="IsValidSubjectId"/>.</exception>
+    public string GetFilePath(DateTime bucketStart, string subjectId)
+    {
+        Expect.Utc(bucketStart);
+        if (!IsValidSubjectId(subjectId))
+        {
+            throw new ArgumentException(
+                $"Subject id '{subjectId}' must be non-empty and contain only lowercase letters, digits, '_' and '-'.",
+                nameof(subjectId));
+        }
+
+        return Join(root, $"{bucketStart.ToString(dateFmt, Culture)}/{subjectId}.{suffix}");
     }
 
     private static string GetDateTimeFormatString(TimeGranularity granularity)
@@ -71,9 +147,9 @@ public sealed class PathBuilder
             _ => throw new NotImplementedException(),
         };
 
-        var escapedRoot = Regex.Escape(root);
+        var escapedRoot = root.Length == 0 ? string.Empty : $"{Regex.Escape(root)}/";
         var escapedSuffix = Regex.Escape(suffix);
-        return $"^{escapedRoot}/(?<Date>{datePattern})/(?<SubjectId>[a-z0-9_-]+)\\.{escapedSuffix}$";
+        return $"^{escapedRoot}(?<Date>{datePattern})/(?<SubjectId>[a-z0-9_-]+)\\.{escapedSuffix}\\z";
     }
 
     /// <summary>Parses a storage path back into its UTC <paramref name="dateTime"/> bucket and <paramref name="subjectId"/>. Returns <c>false</c> if the path does not match this builder's layout.</summary>
@@ -129,7 +205,7 @@ public sealed class PathBuilder
                 firstSet = true;
             }
 
-            var path = Path.Combine(root, dt.ToString(dateFmt, Culture));
+            var path = Join(root, dt.ToString(dateFmt, Culture));
             paths.Add(path);
             last = dt;
         }
@@ -141,9 +217,9 @@ public sealed class PathBuilder
 
     public string GetExpectedFilePath(DateTime fromUtcInclusive, string? fileName = null)
     {
-        var path =  Path.Combine(root, fromUtcInclusive.ToString(dateFmt, Culture));
+        var path = Join(root, fromUtcInclusive.ToString(dateFmt, Culture));
         fileName ??= $"{fromUtcInclusive.ToString(nonSegmentedDateFmt, Culture)}.{suffix}";
-        return Path.Combine(path, fileName);
+        return Join(path, fileName);
     }
 
     private IEnumerable<DateTime> GetDateTimeSequence(DateTime fromUtcInclusive)
@@ -244,9 +320,17 @@ public sealed class PathBuilder
                 continue;
             }
 
-            return Path.Combine(root, firstStr[..i]);
+            return Join(root, firstStr[..i]);
         }
 
-        return string.Empty;
+        // A single bucket: the full path of its folder, so a listing never scans more than that bucket.
+        return Join(root, $"{firstStr}/");
     }
+
+    private static string Join(string left, string right)
+        => left.Length == 0 ? right : $"{left}{Separator}{right}";
+
+    // \z, not $: $ also matches before a final newline.
+    [GeneratedRegex(@"^[a-z0-9_-]+\z", RegexOptions.CultureInvariant)]
+    private static partial Regex SubjectIdRegex();
 }

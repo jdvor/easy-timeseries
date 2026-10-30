@@ -97,6 +97,98 @@ public class FileStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task Writing_creates_missing_directories()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var path = Path.Combine(dir, "a", "b", "nested.ets");
+
+        using var storage = new FileStorage(path);
+        using var writer = BuildWriter(Rows(4));
+        await writer.WriteToAsync(storage, ct);
+
+        Assert.True(File.Exists(path));
+    }
+
+    [Fact]
+    public async Task Target_is_not_visible_before_close()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var path = Path.Combine(dir, "pending.ets");
+
+        await using var storage = new FileStorage(path);
+        await storage.WriteAsync(new byte[] { 1, 2, 3 }, ct);
+
+        Assert.False(File.Exists(path));
+        Assert.Single(Directory.GetFiles(dir), x => FileStorage.IsTempFileName(Path.GetFileName(x)));
+
+        await storage.CloseAsync(ct);
+
+        Assert.Equal([1, 2, 3], await File.ReadAllBytesAsync(path, ct));
+        Assert.Equal([path], Directory.GetFiles(dir));
+    }
+
+    [Fact]
+    public async Task Disposing_without_close_leaves_the_existing_target_untouched()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var path = Path.Combine(dir, "aborted.ets");
+        await File.WriteAllBytesAsync(path, [9, 9], ct);
+
+        IWriteStorage storage = new FileStorage(path);
+        await using (storage)
+        {
+            await storage.WriteAsync(new byte[] { 1, 2, 3 }, ct);
+        }
+
+        Assert.Equal([9, 9], await File.ReadAllBytesAsync(path, ct));
+        Assert.Equal([path], Directory.GetFiles(dir));
+    }
+
+    [Fact]
+    public async Task Disposing_without_close_creates_no_target()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var path = Path.Combine(dir, "never.ets");
+
+        using (var storage = new FileStorage(path))
+        {
+            await storage.WriteAsync(new byte[] { 1 }, ct);
+        }
+
+        Assert.Empty(Directory.GetFiles(dir));
+    }
+
+    [Theory]
+    [InlineData(".sensor-a.ets.0123456789abcdef0123456789abcdef.tmp", true)]
+    [InlineData("sensor-a.ets", false)]
+    [InlineData("sensor-a.tmp", false)]
+    [InlineData(".hidden.ets", false)]
+    [InlineData(".settings.tmp", false)]
+    [InlineData(".x.ets.0123456789abcdef.tmp", false)]
+    [InlineData(".x.ets.0123456789ABCDEF0123456789ABCDEF.tmp", false)]
+    public void Temp_file_names_are_recognized(string fileName, bool expected)
+    {
+        Assert.Equal(expected, FileStorage.IsTempFileName(fileName));
+    }
+
+    [Fact]
+    public async Task Long_target_names_get_a_bounded_temp_name()
+    {
+        var path = Path.Combine(dir, $"{new string('a', 240)}.ets");
+        var ct = TestContext.Current.CancellationToken;
+        await using (var storage = new FileStorage(path))
+        {
+            await storage.WriteAsync(new byte[] { 1 }, ct);
+            var temp = Path.GetFileName(Assert.Single(Directory.GetFiles(dir)));
+            Assert.True(FileStorage.IsTempFileName(temp));
+            Assert.True(temp.Length <= 70, temp);
+            await storage.CloseAsync(ct);
+        }
+
+        Assert.Equal([1], await File.ReadAllBytesAsync(path, ct));
+    }
+
+    [Fact]
     public void ToString_returns_the_full_path()
     {
         var path = Path.Combine(dir, "named.ets");

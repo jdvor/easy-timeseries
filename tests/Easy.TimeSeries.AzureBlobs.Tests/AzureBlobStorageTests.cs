@@ -2,35 +2,38 @@ namespace Easy.TimeSeries.AzureBlobs.Tests;
 
 using Easy.TimeSeries;
 using Easy.TimeSeries.Abstractions;
+using Easy.TimeSeries.Paths;
 
 [Collection(nameof(FixtureCollection))]
 public class AzureBlobStorageTests
 {
-    private readonly Fixture fixture;
+    private readonly AzureBlobCatalog catalog;
 
     public AzureBlobStorageTests(Fixture fixture)
     {
-        this.fixture = fixture;
+        catalog = new AzureBlobCatalog(fixture.CreateContainer());
     }
 
     [Fact]
     public async Task Write_then_read_back_round_trips_through_blob()
     {
         var ct = TestContext.Current.CancellationToken;
+        var paths = new PathBuilder("raw", TimeGranularity.Hour);
         var t = new DateTime(2026, 8, 2, 17, 24, 47, 264, DateTimeKind.Utc);
+        var path = paths.GetFilePath(paths.GetBucketStart(t), "sensor-a");
         var readings = SampleReadings(t);
 
-        await using (var writeStorage = fixture.HourFactory.Create(fromUtcInclusive: t))
+        await using (var writeStorage = catalog.OpenWrite(path))
         {
             using var writer = BuildWriter(readings);
             await writer.WriteToAsync(writeStorage, ct);
         }
 
-        // Read back with a fresh storage instance pointing at the same blob path, proving the data
-        // survived the round-trip through Azurite rather than lingering in the writer's buffers.
-        await using var readStorage = fixture.HourFactory.Create(fromUtcInclusive: t);
-        var result = await Reader.ReadFromAsync(readStorage, new ReflectionBasedMaterializer<Reading>(), null, ct);
+        // Read back through a fresh storage, proving the data survived the round-trip through Azurite rather than
+        // lingering in the writer's buffers.
+        var result = await Reader.ReadFromAsync(catalog.OpenRead(path), new ReflectionBasedMaterializer<Reading>(), null, ct);
 
+        Assert.Equal("raw/2026/08/02/17/sensor-a.ets", path);
         Assert.Equal(readings.Length, result.Length);
         for (var i = 0; i < readings.Length; i++)
         {
@@ -39,6 +42,17 @@ public class AzureBlobStorageTests
             Assert.Equal(readings[i].Quality, result[i].Quality);
             Assert.Equal(readings[i].Status, result[i].Status);
         }
+
+        var entries = new List<StorageEntry>();
+        await foreach (var entry in catalog.ListAsync(paths.GetExpectedPaths(t, t.AddHours(1)).prefix, ct))
+        {
+            entries.Add(entry);
+        }
+
+        var listed = Assert.Single(entries);
+        Assert.True(paths.TryParse(listed.Path, out var bucketStart, out var subjectId));
+        Assert.Equal(paths.GetBucketStart(t), bucketStart);
+        Assert.Equal("sensor-a", subjectId);
     }
 
     [Fact]
@@ -46,23 +60,23 @@ public class AzureBlobStorageTests
     {
         var ct = TestContext.Current.CancellationToken;
         var t = new DateTime(2026, 3, 14, 9, 0, 0, DateTimeKind.Utc);
+        const string path = "raw/2026/03/14/sensor-a.ets";
 
         var first = SampleReadings(t, count: 8);
-        await using (var storage = fixture.DayFactory.Create(fromUtcInclusive: t))
+        await using (var storage = catalog.OpenWrite(path))
         {
             using var writer = BuildWriter(first);
             await writer.WriteToAsync(storage, ct);
         }
 
         var second = SampleReadings(t, count: 3);
-        await using (var storage = fixture.DayFactory.Create(fromUtcInclusive: t))
+        await using (var storage = catalog.OpenWrite(path))
         {
             using var writer = BuildWriter(second);
             await writer.WriteToAsync(storage, ct);
         }
 
-        await using var readStorage = fixture.DayFactory.Create(fromUtcInclusive: t);
-        var result = await Reader.ReadFromAsync(readStorage, new ReflectionBasedMaterializer<Reading>(), null, ct);
+        var result = await Reader.ReadFromAsync(catalog.OpenRead(path), new ReflectionBasedMaterializer<Reading>(), null, ct);
 
         Assert.Equal(second.Length, result.Length);
         for (var i = 0; i < second.Length; i++)

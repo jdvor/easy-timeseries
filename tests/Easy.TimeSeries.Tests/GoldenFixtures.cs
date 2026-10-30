@@ -187,6 +187,37 @@ internal static class GoldenFixtures
                 [.. CategoryValues.Cast<object>()],
                 [.. BoolValues.Cast<object>()],
             ]),
+
+        // One row per column: the smallest valid file, typical for aggregated files (one slice per file).
+        new GoldenFixture(
+            "single-row",
+            () => new Writer(1)
+                .AddTimeOrdered(OrderedTimestamps[..1], "ts")
+                .AddTimeUnordered(UnorderedTimestamps[3..4], "tsu")
+                .AddInterval(TimeSpanValues[3..4], "span")
+                .AddFloat(FloatValues[3..4], "f32")
+                .AddDouble(DoubleValues[9..10], "f64")
+                .AddDecimal(DecimalValues[7..8], "dec")
+                .AddScaledNumber32(ScaledFloatValues[3..4], "sn32", 2)
+                .AddScaledNumber64(ScaledDoubleValues[9..10], "sn64", 2)
+                .AddInt32(Int32Values[8..9], "i32")
+                .AddInt64(Int64Values[3..4], "i64")
+                .AddBool(BoolValues[..1], "flag")
+                .AddCategory(CategoryValues[1..2], "cat"),
+            [
+                [OrderedTimestamps[0]],
+                [UnorderedTimestamps[3]],
+                [TimeSpanValues[3]],
+                [FloatValues[3]],
+                [DoubleValues[9]],
+                [DecimalValues[7]],
+                [ScaledFloatValues[3]],
+                [ScaledDoubleValues[9]],
+                [Int32Values[8]],
+                [Int64Values[3]],
+                [BoolValues[0]],
+                [CategoryValues[1]],
+            ]),
     ];
 }
 

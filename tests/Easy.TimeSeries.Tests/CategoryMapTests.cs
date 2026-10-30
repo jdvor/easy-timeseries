@@ -33,6 +33,47 @@ public class CategoryMapTests
         Assert.True(Basic.Count == actual.Count, "Basic.Count != actual.Count");
     }
 
+    /// <summary>
+    /// Regression test: the map length is a ushort, so 20,000 labels of 6 characters (140 kB) wrapped it and the
+    /// writer produced a file the reader rejected.
+    /// </summary>
+    [Fact]
+    public void Map_too_large_to_serialize_is_rejected()
+    {
+        var keys = Enumerable.Range(0, 20_000).Select(i => $"s{i:D5}").ToArray();
+        var ex = Assert.Throws<ArgumentException>(() => new CategoryMap(keys));
+        Assert.Contains("65535", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("Plzeň")]
+    [InlineData("Brno-ž")]
+    [InlineData("€")]
+    public void Non_ascii_labels_are_rejected(string label)
+    {
+        var ex = Assert.Throws<ArgumentException>(() => new CategoryMap(["ok", label]));
+        Assert.Contains(label, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Writer_rejects_non_ascii_labels_instead_of_corrupting_them()
+    {
+        Assert.Throws<ArgumentException>(() => new Writer(2).AddCategory(["Brno-ž", "Brno-š"], "city"));
+    }
+
+    [Fact]
+    public void Largest_serializable_map_round_trips()
+    {
+        // 2 bytes count + 16,383 x (1 length byte + 3 characters) = 65,534 bytes.
+        var keys = Enumerable.Range(0, 16_383).Select(i => $"{(char)('a' + (i / 676))}{(char)('a' + (i / 26 % 26))}{(char)('a' + (i % 26))}").ToArray();
+        var sut = new CategoryMap(keys);
+        var buffer = new byte[sut.SizeHint + 2];
+        sut.WriteTo(buffer);
+
+        Assert.True(CategoryMap.TryReadFrom(buffer, out var actual, out _));
+        Assert.Equal(keys.Length, actual.Count);
+    }
+
     [Fact]
     public void ThrowsOnIvalidMapData()
     {

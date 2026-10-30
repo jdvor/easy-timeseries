@@ -2,6 +2,8 @@
 - [License](license.md)
 - [Solution Overview](solution-overview.md)
 - [Data Layout Details](layout.md)
+- [Storage](storage.md)
+- [Aggregation](aggregation.md)
 - [Source Generation](source-generation.md)
 - [Parquet Conversion](parquet-conversion.md)
 - [Benchmarking](benchmarking.md)

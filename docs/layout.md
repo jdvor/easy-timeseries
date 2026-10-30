@@ -214,8 +214,8 @@ the map when computing column offsets. Ideal for low-cardinality repeated text; 
 text.
 
 The appended `CategoryMap` begins with its own byte length, then an entry count, then the labels in id order (each a
-length-prefixed string), so a reader recovers the id→label mapping by position. See `CategoryReader.ReadCategoryMap` for
-the exact byte offsets.
+length-prefixed ASCII string), so a reader recovers the id→label mapping by position. See
+`CategoryReader.ReadCategoryMap` for the exact byte offsets.
 
 ### `FloatRaw` / `DoubleRaw` / `Int64Raw` / `Int32Raw` (raw values, Brotli-compressed)
 

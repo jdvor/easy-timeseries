@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Easy.TimeSeries.CmdLine\Easy.TimeSeries.CmdLine.csproj" />
+  </ItemGroup>
+
+</Project>

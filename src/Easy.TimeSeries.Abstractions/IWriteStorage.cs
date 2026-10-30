@@ -5,7 +5,12 @@ namespace Easy.TimeSeries.Abstractions;
 /// writer stays storage-agnostic. The writer streams the header and each column via <see cref="WriteAsync"/>, then
 /// calls <see cref="CloseAsync"/> once to finalize.
 /// </summary>
-public interface IWriteStorage
+/// <remarks>
+/// Disposing after <see cref="CloseAsync"/> only releases resources. Disposing without it aborts the write: the
+/// content does not become visible and any existing content at the destination stays untouched, as far as the
+/// backend allows.
+/// </remarks>
+public interface IWriteStorage : IAsyncDisposable
 {
     /// <summary>Appends a chunk of the serialized output.</summary>
     Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken = default);

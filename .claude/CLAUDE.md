@@ -26,19 +26,37 @@ high-signal - it is not a substitute for the codebase or the docs.
 | `src/Easy.TimeSeries.Abstractions` | implemented | Stable contracts for external consumers: `ColumnAttribute`, `IMaterializer<T>`, `DataValueType`, precision enums.          |
 | `src/Easy.TimeSeries`              | implemented | Core library. Bit-level encoders/decoders, `Header`, `Writer`, `ReadBuilder`, `ReflectionBasedMaterializer`, storage.      |
 | `src/Easy.TimeSeries.SrcGen`       | implemented | Roslyn incremental generator: `[GenerateWriter]`/`[GenerateReader]` on a DTO emit `{Dto}Writer`, `{Dto}Materializer`, `{Dto}Reader`. Diagnostics ETS001-ETS011. See `docs/source-generation.md`. |
-| `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage) and `AzureBlobStorageFactory`, which maps a time bucket to a blob path via `PathBuilder`. |
+| `src/Easy.TimeSeries.AzureBlobs`   | implemented | `AzureBlobStorage` (IWriteStorage + IReadStorage, buffered single upload on close) and `AzureBlobCatalog` (IStorageCatalog over a container, ETag versions). |
 | `src/Easy.TimeSeries.Parquet`      | implemented (ts->parquet) | `TsToParquetConverter` converts a ts buffer to Apache Parquet via `Parquet.Net`, reusing the core reader through an `IMaterializer` sink. Native type mapping (TIMESTAMP/DECIMAL/etc.). Reverse direction (parquet->ts) not yet done. |
-| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`.                     |
+| `src/Easy.TimeSeries.Aggregation` | implemented | `AggregationSpec`, predefined functions (`Agg`, `Functions/`), batch `Downsampler` (`Engine/`), write-time `AggregatingCatalog` and `AggregationMaintenance` (`WriteTime/`). See `docs/aggregation.md`. |
+| `src/Easy.TimeSeries.CmdLine`      | implemented | `ets` dotnet tool on `ConsoleAppFramework`: `ref-files-ets`, `ref-files-parquet`, `convert-to-parquet`, `downsample`.                     |
 | `src/Easy.TimeSeries.Benchmarks`   | implemented | `BenchmarkDotNet` micro-benchmarks per column encoder, plus an `ets size` command comparing against CSV and snappy Parquet. |
 | `src/Easy.TimeSeries.TestData`     | implemented | Re-usable sample datasets (Boeing, Gold, Vix, Macro4, PowerPlant) shared by tests and benchmarks.                          |
 | `src/Easy.Sample`                  | implemented | Small example app demonstrating source-generated writer/reader end to end (`PowerNode` DTO).                               |
 | `tests/Easy.TimeSeries.Tests`      | implemented | xUnit v3 tests for the core library: bit-level writers/readers, DTO round-trip, storage, and golden format fixtures.       |
 | `tests/Easy.TimeSeries.SrcGen.Tests` | implemented | `CSharpGeneratorDriver`-based tests for the generator: generated-code shape, ETS diagnostics, incrementality.            |
 | `tests/Easy.TimeSeries.Parquet.Tests` | implemented | Conversion tests for `TsToParquetConverter`, including native type mapping.                                             |
+| `tests/Easy.TimeSeries.Aggregation.Tests` | implemented | Function unit tests on hand-built slices, spec binding, and `OracleTests` comparing the downsampler with a LINQ reference over randomized data. |
+| `tests/Easy.TimeSeries.CmdLine.Tests` | implemented | `ets downsample` argument parsing and run loop over temp directories. The CLI assembly is `ets`, so it grants `InternalsVisibleTo` explicitly. |
 | `tests/Easy.TimeSeries.AzureBlobs.Tests` | implemented | Integration tests against a real Azurite container via Testcontainers; needs Docker to run.                          |
 
 Every project in the solution has a working implementation. The one deliberate feature gap is the reverse Parquet
 direction (`parquet -> ets`), tracked as planned work in `docs/parquet-conversion.md`.
+
+## Sibling repository: `easy-timeseries-js`
+
+A read-only **JavaScript/TypeScript decoder** for the same `.ets` format lives in `jdvor/easy-timeseries-js`,
+cloned locally at `~/dev/jdvor/easy-timeseries-js`. It is published to npm as `@jdvor/easy-timeseries` and ships
+an Apache ECharts adapter and a demo site. Writing `.ets` from JavaScript is permanently out of scope there - this
+repository remains the only writer.
+
+As of 2026-09-14 no code has been written there yet - the plan lives at `artifacts/plan.md` in that working copy
+and is gitignored, so it is local to that machine rather than part of the repository. The plan also specifies the
+work owed from **this** side: a `manifest.json` next to the golden fixtures, an always-on test that keeps it in
+sync, golden coverage for the four `*Raw` column types, and a `docs/javascript-reader.md` page in the book.
+
+**What crosses the boundary: the golden fixture corpus, and nothing else.** The JS repo vendors a copy of
+`tests/data/golden/v1/` (1280 bytes, 13 files) and refreshes it with its own `scripts/sync-fixtures.sh`.
 
 ## Core library layout (`src/Easy.TimeSeries/`)
 
@@ -52,8 +70,9 @@ Top-level - public surface:
 - `ReflectionBasedMaterializer.cs` - reference implementation of `IMaterializer<T>`; the source-generated variant will
   replace it for hot paths.
 - `PooledArrayBufferWriter.cs` - `IBufferWriter<byte>` backed by `ArrayPool<byte>.Shared`, used by every column.
-- `Storage/` - `IWriteStorage`, `IReadStorage`, `FileStorage`, `InMemoryStorage`.
-- `Paths/` - `PathBuilder` and `TimeGranularity` for layout of files on disk.
+- `Storage/` - `FileStorage`, `InMemoryStorage`, `FileCatalog`, `InMemoryCatalog`, `StoragePath`. The contracts
+  (`IWriteStorage`, `IReadStorage`, `IStorageCatalog`) live in Abstractions.
+- `Paths/` - `PathBuilder` and `TimeGranularity` for the bucketed path layout.
 - `Extensions.cs`, `Exceptions.cs`, `AssemblyInfo.cs`.
 
 `Internal/` - per-type encoders/decoders and shared bit-level primitives. Marked `internal` and only exposed to
@@ -93,6 +112,47 @@ Read these before touching anything in `Internal/`:
 - For `ScaledNumber32`/`ScaledNumber64`, `ColumnInfo.Meta` stores `decimalPlaces` (e.g. `2`), not the scale
   (e.g. `100`). Both writer and reader sides must do `scale = (int)Math.Pow(10, decimalPlaces)`.
 
+## Storage and path conventions
+
+See `docs/storage.md` for the full picture. Worth knowing before touching `Storage/`, `Paths/` or the Azure adapter:
+
+- Storage paths are logical: always `/`-separated and relative, on every OS. `PathBuilder` never uses
+  `Path.Combine`; only `FileCatalog` maps logical paths to OS paths.
+- Subject ids are lowercase `[a-z0-9_-]+` and `PathBuilder.TryParse` is case-sensitive. `GetFilePath` must stay the
+  exact inverse of `TryParse`, including for an empty root.
+- Every write is atomic, and disposing an `IWriteStorage` without `CloseAsync` aborts it. `FileStorage` writes a
+  `.{name}.{guid}.tmp` file and renames it on close. `AzureBlobStorage` buffers and uploads once on close.
+- Do not use `BlobClient.OpenWriteAsync`: it uploads an empty blob when it opens, which truncates the target and
+  consumes any `IfMatch` condition before the data is written.
+- `FileStorage` commits and `FileCatalog` deletes run under `PathLocks`, so a version check and the rename or delete
+  are atomic within the process. Every commit and delete of a local file must take that lock, conditional or not.
+- Storages returned by `OpenWrite` implement `IVersionedWriteStorage`. Take the version of your own write from
+  `CommittedVersion`, never from a `GetAsync` after the commit.
+- `IStorageCatalog` implementations share one contract test, `tests/Easy.TimeSeries.Tests/StorageCatalogContract.cs`,
+  which the AzureBlobs test project links in. A new catalog derives from it.
+- Abstractions targets `netstandard2.0`: no default interface methods. `IAsyncDisposable` and `IAsyncEnumerable` come
+  from `Microsoft.Bcl.AsyncInterfaces`.
+
+## Write-time aggregation invariants
+
+Worth knowing before changing `src/Easy.TimeSeries.Aggregation/WriteTime/`:
+
+- `HookedWriteStorage.CloseAsync` must never throw because of aggregation once the inner raw commit succeeded.
+  Everything after the commit falls back to setting a marker and reporting through `OnFailure`.
+- The processor deletes a marker only with `ifMatch` = the version it listed. Dropping that condition loses raw data
+  written during a recompute. Every marker write must change the version.
+- Markers are the only path to recomputing a longer storage time span. Recovery sets markers; it never recomputes.
+- Raw retention is checked against the span **start**: the oldest raw files of a span are deleted first.
+  `AggregationConfiguration.Validate` requires retention of at least the longest storage time span plus the grace
+  period.
+- Recovery decides staleness from source records (`{subject}.sources.json` next to each aggregated `.ets`), the raw
+  paths and versions an aggregated file was computed from, never from timestamps. Every write of an aggregated file by the hook or the processor must be
+  followed by its record, with versions taken no later than the raw files were read.
+- A source record also names the aggregated version it describes, taken from `CommittedVersion` of that write. The
+  hook binds its kept bytes to the raw `CommittedVersion` the same way; a `GetAsync` after a commit proves nothing.
+- Post-commit work in the hook runs with `CancellationToken.None`: the raw file is committed, so stopping halfway would
+  leave aggregations neither computed nor marked.
+
 ## Build, test, run
 
 - Target framework: `net10.0` (`shared.props`). SDK pinned via `global.json` to `10.0.300` with `latestFeature` roll-forward.
@@ -109,6 +169,10 @@ Read these before touching anything in `Internal/`:
   literal `--`.
 - Golden format fixtures live in `tests/data/golden/v1`. Regenerate **only** for a deliberate format change:
   `./scripts/regen-golden.sh`, then review the diff.
+- **A deliberate format change is a two-repo change.** Because `easy-timeseries-js` is a separate repository, a
+  format change here will not fail its conformance suite in the same pull request - nothing enforces this
+  automatically. After regenerating the fixtures, dispatch `sync-fixtures.yml` in that repo rather than leaving it
+  to the weekly cron.
 - Benchmarks: `dotnet run -c Release --project src/Easy.TimeSeries.Benchmarks`.
 - CI: `.github/workflows/test.yml` runs on push/PR (paths-ignore for docs/scripts). `.github/workflows/publish.yml` is
   `workflow_dispatch` only; semantic version is derived from conventional commit prefixes (`feat:`, `BREAKING CHANGE:`)
