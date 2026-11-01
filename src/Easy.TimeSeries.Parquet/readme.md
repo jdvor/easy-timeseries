@@ -23,6 +23,6 @@ await TsToParquetConverter.ConvertAsync(source, destination);
 
 ## Links
 
-- [Type mapping and options](https://github.com/jdvor/easy-timeseries/blob/master/docs/parquet-conversion.md)
+- [Type mapping and options](https://github.com/jdvor/easy-timeseries/blob/master/docs/07-parquet-conversion.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

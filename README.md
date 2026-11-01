@@ -38,20 +38,20 @@ Supported data types in columnar storage:
 
 Real numbers can also be stored as a fixed-point *scaled number* (`ScaledNumber32` / `ScaledNumber64`), which
 quantizes to a set number of decimal places. It is usually the smallest option, and the only lossy one - every
-other encoding round-trips exactly. See [Getting started](docs/introduction.md) for how to choose per column.
+other encoding round-trips exactly. See [Getting started](docs/01-introduction.md) for how to choose per column.
 
 ## Users
 
-- [Getting started](docs/introduction.md)
-- [How the library is licensed](docs/license.md)
+- [Getting started](docs/01-introduction.md)
+- [How the library is licensed](docs/10-license.md)
 - [How to report security issues](SECURITY.md)
 
 ## Contributors
 
 - [I want to contribute](CONTRIBUTING.md)
-- [Solution Overview](docs/solution-overview.md)
-- [Data Layout Details](docs/layout.md)
-- [Code Style](docs/code-style.md)
-- [Benchmarking](docs/benchmarking.md)
+- [Solution Overview](docs/02-solution-overview.md)
+- [Data Layout Details](docs/03-layout.md)
+- [Code Style](docs/09-code-style.md)
+- [Benchmarking](docs/08-benchmarking.md)
 
 [tscae]: https://www.tigerdata.com/blog/time-series-compression-algorithms-explained

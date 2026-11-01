@@ -12,7 +12,7 @@ using global::Parquet.Schema;
 /// <summary>
 /// Converts a serialized time-series buffer (this library's columnar format) into an Apache Parquet stream. Each
 /// time-series column becomes one Parquet column using a native Parquet type; the mapping and options are described
-/// in <c>docs/parquet-conversion.md</c>. Conversion is column-oriented and reuses the core reader, so no schema or DTO
+/// in <c>docs/07-parquet-conversion.md</c>. Conversion is column-oriented and reuses the core reader, so no schema or DTO
 /// needs to be supplied - the self-describing time-series header drives the whole process.
 /// </summary>
 public static class TsToParquetConverter

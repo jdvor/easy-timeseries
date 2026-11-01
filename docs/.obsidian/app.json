@@ -1,5 +1,6 @@
 {
   "showInlineTitle": false,
   "readableLineLength": false,
-  "useMarkdownLinks": true
+  "useMarkdownLinks": true,
+  "strictLineBreaks": true
 }

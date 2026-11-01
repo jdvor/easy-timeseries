@@ -6,7 +6,7 @@ using global::Parquet.Schema;
 
 /// <summary>
 /// Maps a time-series <see cref="ColumnInfo"/> to the Parquet <see cref="DataField"/> that best represents it, using
-/// native Parquet types. The full mapping is documented in <c>docs/parquet-conversion.md</c>.
+/// native Parquet types. The full mapping is documented in <c>docs/07-parquet-conversion.md</c>.
 /// </summary>
 internal static class ParquetTypeMapper
 {

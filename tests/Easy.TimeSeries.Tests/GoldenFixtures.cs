@@ -6,7 +6,7 @@ using Easy.TimeSeries.Abstractions;
 /// Single source of truth for the on-disk format fixtures under <c>tests/data/golden/v1</c>.
 /// Each fixture pairs the exact input used to produce a committed <c>.ets</c> file with the values a reader must
 /// decode back out of it. See <see cref="GoldenFileTests"/> for how both halves are asserted, and
-/// <c>docs/layout.md</c> for the format itself.
+/// <c>docs/03-layout.md</c> for the format itself.
 /// </summary>
 /// <remarks>
 /// Values are fixed literals on purpose - nothing here may depend on the clock, the culture, or the machine, or

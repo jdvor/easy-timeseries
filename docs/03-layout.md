@@ -6,7 +6,7 @@ reader or writer (for example a Parquet converter). It deliberately stops short 
 per-type writers and readers in `src/Easy.TimeSeries/Internal/` are the authoritative source for that. When this
 document and the code disagree, the code wins; fix the document.
 
-For guidance on *which* encoding to choose for your data, see [Introduction](introduction.md). This document is about
+For guidance on *which* encoding to choose for your data, see [Introduction](01-introduction.md). This document is about
 the format, not about how to use it optimally.
 
 All integers on disk are **little-endian**. Bit-packed columns pack values into 64-bit words, themselves stored

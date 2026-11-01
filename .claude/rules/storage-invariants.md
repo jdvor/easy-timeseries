@@ -10,7 +10,7 @@ paths:
 # Storage and Path Invariants
 
 Worth knowing before touching storage, paths, the Azure adapter or the storage contracts. The design is in
-`docs/storage.md`.
+`docs/04-storage.md`.
 
 - Storage paths are logical: always `/`-separated and relative, on every OS. `PathBuilder` never uses
   `Path.Combine`; only `FileCatalog` maps logical paths to OS paths.

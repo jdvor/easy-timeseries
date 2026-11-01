@@ -37,10 +37,10 @@ ets downsample --input ./data/raw --output ./data --raw-granularity hour \
 - A failing file is reported and the run continues; the exit code is 1 if any file failed.
 
 Custom multi-column functions need code; see the
-[aggregation guide](https://github.com/jdvor/easy-timeseries/blob/master/docs/aggregation.md).
+[aggregation guide](https://github.com/jdvor/easy-timeseries/blob/master/docs/05-aggregation.md).
 
 ## Links
 
-- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/introduction.md)
+- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/01-introduction.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

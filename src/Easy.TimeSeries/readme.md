@@ -34,7 +34,7 @@ For source-generated, allocation-conscious writers/readers on top of a DTO, see
 
 ## Links
 
-- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/introduction.md)
-- [Data layout details](https://github.com/jdvor/easy-timeseries/blob/master/docs/layout.md)
+- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/01-introduction.md)
+- [Data layout details](https://github.com/jdvor/easy-timeseries/blob/master/docs/03-layout.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

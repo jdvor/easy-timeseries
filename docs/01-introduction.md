@@ -2,13 +2,13 @@
 
 `Easy.TimeSeries` stores tabular, mostly-numeric data column by column and compresses each column with an encoding
 chosen for its shape. Picking the right encoding per column is where the size and speed wins come from - and most of
-that choice is expressed through a few knobs that are easy to miss. This page is about using those knobs *optimally*.
+that choice is expressed through a few knobs. This page is about using those knobs *optimally*.
 
 There are two ways to use the library; they share the same storage format and the same tuning decisions:
 
 - **Low-level** - build a file by hand with `Writer` / `Reader`. Full control, no code generation.
 - **Source-generated** - annotate a DTO with `[Column]` and let `Easy.TimeSeries.SrcGen` emit the writer and reader.
-  Same knobs, expressed as attribute options. See [Source Generation](source-generation.md) for the generator details.
+  Same knobs, expressed as attribute options. See [Source Generation](06-source-generation.md) for the generator details.
 
 ## Quick start
 
@@ -25,7 +25,7 @@ using var writer = new Writer(rows)
     .AddScaledNumber32(samples.Select(s => s.Celsius), "temp", decimalPlaces: 2)
     .AddCategory(samples.Select(s => s.SensorId), "sensor");
 
-using var storage = new FileStorage("readings.ets");
+using var storage = new FileStorage("temperature.ets");
 await writer.WriteToAsync(storage);
 ```
 
@@ -33,8 +33,9 @@ Reading back materializes rows into a DTO. Without code generation, use `Reflect
 `[Column]` indexes must line up with the write order:
 
 ```csharp
-using var storage = new FileStorage("readings.ets");
-var readings = await Reader.ReadFromAsync(storage, new ReflectionBasedMaterializer<Reading>());
+using var storage = new FileStorage("temperature.ets");
+var materializer = new ReflectionBasedMaterializer<Reading>();
+var readings = await Reader.ReadFromAsync(storage, materializer);
 ```
 
 ### Source-generated: annotate a DTO
@@ -44,7 +45,7 @@ using Easy.TimeSeries.Abstractions;
 
 [GenerateWriter]
 [GenerateReader]
-public sealed class Reading
+public sealed class Temperature
 {
     [Column(0, Label = "ts", DateTimeSort = DateTimeSort.Ascending)]
     public DateTime TimestampUtc { get; set; }
@@ -58,12 +59,12 @@ public sealed class Reading
 ```
 
 ```csharp
-using var storage = new FileStorage("readings.ets");
-await new ReadingWriter().WriteAsync(samples, storage);
-var readings = await new ReadingReader().ReadAsync(new ReadOptions(), storage);
+using var storage = new FileStorage("temperature.ets");
+await new TemperatureWriter().WriteAsync(samples, storage);
+var readings = await new TemperatureReader().ReadAsync(new ReadOptions(), storage);
 ```
 
-The generated `ReadingWriter` issues exactly the `Add…` calls the low-level example wrote by hand - the attribute
+The generated `TemperatureWriter` issues exactly the `Add…` calls the low-level example wrote by hand - the attribute
 options map one-to-one onto them.
 
 ## Rules that always apply
@@ -193,6 +194,6 @@ High-cardinality free text (unique messages, GUIDs as strings) is a poor fit - i
 
 ## Where to next
 
-- [Source Generation](source-generation.md) - the `[Column]` attribute options, the type-mapping table, and the
+- [Source Generation](06-source-generation.md) - the `[Column]` attribute options, the type-mapping table, and the
   `ETS` diagnostics that catch mistakes (e.g. an option set on a column type that ignores it).
-- [Data Layout Details](layout.md) - the on-disk byte format and exactly how each encoding packs its column.
+- [Data Layout Details](03-layout.md) - the on-disk byte format and exactly how each encoding packs its column.

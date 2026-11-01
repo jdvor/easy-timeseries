@@ -10,15 +10,15 @@ Only this file is loaded automatically. Read the matching document before workin
 
 | Area                                                  | Read                                                   |
 | ----------------------------------------------------- | ------------------------------------------------------ |
-| Any C# code                                           | `docs/code-style.md`                                   |
-| `src/Easy.TimeSeries/Internal/`, `Writer`, `Reader`   | `docs/layout.md`, `.claude/rules/format-invariants.md` |
-| `Storage/`, `Paths/`, AzureBlobs, storage contracts   | `docs/storage.md`, `.claude/rules/storage-invariants.md` |
-| `src/Easy.TimeSeries.Aggregation/`                    | `docs/aggregation.md`; for `WriteTime/` also `.claude/rules/aggregation-invariants.md` |
-| `src/Easy.TimeSeries.SrcGen/`                         | `docs/source-generation.md`                            |
-| `src/Easy.TimeSeries.Parquet/`                        | `docs/parquet-conversion.md`                           |
-| Benchmarks                                            | `docs/benchmarking.md`                                 |
-| Public API, encodings, column options                 | `docs/introduction.md`                                 |
-| Which project does what                               | `docs/solution-overview.md`                            |
+| Any C# code                                           | `docs/09-code-style.md`                                   |
+| `src/Easy.TimeSeries/Internal/`, `Writer`, `Reader`   | `docs/03-layout.md`, `.claude/rules/format-invariants.md` |
+| `Storage/`, `Paths/`, AzureBlobs, storage contracts   | `docs/04-storage.md`, `.claude/rules/storage-invariants.md` |
+| `src/Easy.TimeSeries.Aggregation/`                    | `docs/05-aggregation.md`; for `WriteTime/` also `.claude/rules/aggregation-invariants.md` |
+| `src/Easy.TimeSeries.SrcGen/`                         | `docs/06-source-generation.md`                            |
+| `src/Easy.TimeSeries.Parquet/`                        | `docs/07-parquet-conversion.md`                           |
+| Benchmarks                                            | `docs/08-benchmarking.md`                                 |
+| Public API, encodings, column options                 | `docs/01-introduction.md`                                 |
+| Which project does what                               | `docs/02-solution-overview.md`                            |
 
 ## Rules and skills
 

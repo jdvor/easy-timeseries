@@ -5,7 +5,7 @@ paths:
 
 # Write-Time Aggregation Invariants
 
-Worth knowing before changing write-time aggregation. The design is in `docs/aggregation.md`.
+Worth knowing before changing write-time aggregation. The design is in `docs/05-aggregation.md`.
 
 - `HookedWriteStorage.CloseAsync` must never throw because of aggregation once the inner raw commit succeeded.
   Everything after the commit falls back to setting a marker and reporting through `OnFailure`.

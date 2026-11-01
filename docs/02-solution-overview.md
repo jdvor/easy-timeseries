@@ -42,33 +42,33 @@ The core library and the only project that understands the on-disk format.
 - `Internal/` holds the bit-level primitives and one encoder/decoder pair per supported type. It is `internal`,
   exposed only to the test, benchmark and CLI assemblies.
 
-See [Data Layout Details](layout.md) for the byte format itself.
+See [Data Layout Details](03-layout.md) for the byte format itself.
 
 ## Easy.TimeSeries.SrcGen
 
 A Roslyn incremental generator. Annotating a DTO with `[GenerateWriter]` and/or `[GenerateReader]` emits a typed
 `{Dto}Writer`, `{Dto}Materializer` and `{Dto}Reader`, so the reflection-based materializer can be avoided on hot
 paths. Mistakes in the annotations are reported as `ETS001`-`ETS011` diagnostics rather than as broken generated
-code. See [Source Generation](source-generation.md).
+code. See [Source Generation](06-source-generation.md).
 
 ## Easy.TimeSeries.AzureBlobs
 
 Mirrors the local-file storage in Azure Blob Storage. `AzureBlobStorage` implements both `IWriteStorage` and
 `IReadStorage` over a `BlobClient`. `AzureBlobCatalog` implements `IStorageCatalog` over a container, with blob
 ETags as versions. Paths come from the same `PathBuilder` the file layout uses, so a dataset laid out on disk and in
-a container has the same shape. See [Storage](storage.md).
+a container has the same shape. See [Storage](04-storage.md).
 
 ## Easy.TimeSeries.Aggregation
 
 Aggregated (downsampled) views over raw data, built only on the public core API. `AggregationSpec` declares the
 aggregation time span, the storage time span, grouping and the functions; `Downsampler` computes one aggregated file
-from the raw files of its storage time span. See [Aggregation](aggregation.md).
+from the raw files of its storage time span. See [Aggregation](05-aggregation.md).
 
 ## Easy.TimeSeries.Parquet
 
 Converts a serialized buffer into an Apache Parquet stream through `Parquet.Net`. The conversion is driven by the
 self-describing header, so no DTO or schema has to be supplied, and each column maps onto a native Parquet type.
-Only the `ets -> parquet` direction exists today. See [Parquet Conversion](parquet-conversion.md).
+Only the `ets -> parquet` direction exists today. See [Parquet Conversion](07-parquet-conversion.md).
 
 ## Easy.TimeSeries.CmdLine
 
@@ -86,7 +86,7 @@ gives the size comparison realistic, non-synthetic input.
 ## Easy.TimeSeries.Benchmarks
 
 Size comparison and micro-benchmarks, runnable locally or via the `Benchmarks` GitHub Actions workflow.
-See [Benchmarking](benchmarking.md).
+See [Benchmarking](08-benchmarking.md).
 
 ## Easy.Sample
 

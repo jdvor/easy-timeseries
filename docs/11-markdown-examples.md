@@ -181,4 +181,4 @@ graph TD
 - [mdbook-mermaid](https://github.com/badboy/mdbook-mermaid)
 - [mdbook-toc](https://github.com/badboy/mdbook-toc)
 
-Internal cross-references: [Layout details](layout.md), [Code style](code-style.md).
+Internal cross-references: [Layout details](03-layout.md), [Code style](09-code-style.md).

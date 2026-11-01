@@ -28,6 +28,6 @@ await downsampler.RunAsync(catalog, raw, "sensor-a", new DateTime(2026, 10, 25, 
 
 ## Links
 
-- [Aggregation](https://github.com/jdvor/easy-timeseries/blob/master/docs/aggregation.md)
+- [Aggregation](https://github.com/jdvor/easy-timeseries/blob/master/docs/05-aggregation.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

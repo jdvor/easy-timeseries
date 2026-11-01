@@ -46,6 +46,6 @@ Shared CI runners are noisy - treat workflow timings as indicative and re-run lo
 
 ## Links
 
-- [Benchmarking](https://github.com/jdvor/easy-timeseries/blob/master/docs/benchmarking.md)
+- [Benchmarking](https://github.com/jdvor/easy-timeseries/blob/master/docs/08-benchmarking.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

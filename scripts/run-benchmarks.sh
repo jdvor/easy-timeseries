@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Runs the size comparison and/or micro-benchmarks from Easy.TimeSeries.Benchmarks and stores the
-# resulting markdown reports under performance-results/<date>-<short-sha>/. See docs/benchmarking.md.
+# resulting markdown reports under performance-results/<date>-<short-sha>/. See docs/08-benchmarking.md.
 #
 # Usage: ./scripts/run-benchmarks.sh [-o|--output-dir <dir>] [-f|--filter <pattern>] [-s|--size-only] [-b|--bench-only]
 #                                    [-F|--full]

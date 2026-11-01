@@ -42,7 +42,7 @@ dependency, but does require a reference to `Easy.TimeSeries` for the emitted co
 
 ## Links
 
-- [Source generation reference](https://github.com/jdvor/easy-timeseries/blob/master/docs/source-generation.md)
-- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/introduction.md)
+- [Source generation reference](https://github.com/jdvor/easy-timeseries/blob/master/docs/06-source-generation.md)
+- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/01-introduction.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

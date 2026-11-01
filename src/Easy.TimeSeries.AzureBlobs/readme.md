@@ -34,7 +34,7 @@ The factory wrote `{date folders}/yyyyMMddHH.ets` without a subject id. Such blo
 
 ## Links
 
-- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/introduction.md)
-- [Storage](https://github.com/jdvor/easy-timeseries/blob/master/docs/storage.md)
+- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/01-introduction.md)
+- [Storage](https://github.com/jdvor/easy-timeseries/blob/master/docs/04-storage.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)

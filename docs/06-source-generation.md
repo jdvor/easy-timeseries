@@ -71,7 +71,7 @@ core `TimePrecision` enum.
 `NumberDistribution` defaults to `Continuous` (XOR/delta "Gorilla" encoding, compact for slowly-varying signals).
 Set it to `Random` on a `float`, `double`, `long` or `int` column whose values are uncorrelated between rows (e.g.
 geographic coordinates, identifiers) to store the values raw and Brotli-compressed instead - see the raw column
-types in `layout.md`. It is mutually exclusive with `NumberPrecision`: if both are set the scaled encoding wins and
+types in `03-layout.md`. It is mutually exclusive with `NumberPrecision`: if both are set the scaled encoding wins and
 `NumberDistribution` is reported ignored (ETS009). Setting it on any other column type is likewise ignored (ETS009).
 
 ## Shape of the generated code

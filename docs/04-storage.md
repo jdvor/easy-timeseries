@@ -10,15 +10,6 @@ Two layers decide where serialized buffers live:
 Where a buffer sits inside a container - root, date folders, subject id - is decided by `PathBuilder`, not by the
 catalog.
 
-## Breaking changes in 2.0
-
-| Change | What to do |
-| --- | --- |
-| `AzureBlobStorageFactory` is removed | Use `AzureBlobCatalog` with `PathBuilder.GetFilePath`, see Migration |
-| `IWriteStorage` extends `IAsyncDisposable` | Custom storages implement `DisposeAsync`; disposing without close must abort |
-| `PathBuilder` joins paths with `/` on every OS | Do not combine its output with `Path.Combine`; map to OS paths only at the file system |
-| `PathBuilder.TryParse` matches case-sensitively | Subject ids are lowercase; mixed-case paths no longer parse |
-
 ## Writing and aborting
 
 ```mermaid
@@ -157,13 +148,3 @@ await foreach (var entry in catalog.ListAsync(prefix))
     }
 }
 ```
-
-## Migration from AzureBlobStorageFactory
-
-| Before | After |
-| --- | --- |
-| `new AzureBlobStorageFactory(container, TimeGranularity.Hour)` | `new AzureBlobCatalog(container)` and `new PathBuilder(TimeGranularity.Hour)` |
-| `factory.Create(bucketStart)` | `catalog.OpenWrite(paths.GetFilePath(bucketStart, subjectId))` |
-
-The factory wrote `{date folders}/yyyyMMddHH.ets` without a subject id, which `PathBuilder.TryParse` cannot read back.
-Files written that way stay readable through `OpenRead` with their existing path.

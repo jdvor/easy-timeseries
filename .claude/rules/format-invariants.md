@@ -8,7 +8,7 @@ paths:
 
 # Format Invariants
 
-Worth knowing before changing bit-level code. The byte format itself is in `docs/layout.md`.
+Worth knowing before changing bit-level code. The byte format itself is in `docs/03-layout.md`.
 
 - A file is one `Header` followed by N column blocks. Each column block is one `ColumnHeader` (9 bytes) followed by
   `DataLength` bytes of packed words. Words are 8 bytes, little-endian.

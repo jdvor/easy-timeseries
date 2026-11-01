@@ -15,6 +15,6 @@ reference it without pulling in the storage/encoding implementation.
 
 ## Links
 
-- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/introduction.md)
+- [Getting started](https://github.com/jdvor/easy-timeseries/blob/master/docs/01-introduction.md)
 - [Source code](https://github.com/jdvor/easy-timeseries)
 - [License](https://github.com/jdvor/easy-timeseries/blob/master/LICENSE)
